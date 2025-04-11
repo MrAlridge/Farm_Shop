@@ -1,3 +1,5 @@
+import request from '@/utils/request'
+
 // 贫困户注册
 export const registerPoor = async (userData) => {
   return new Promise((resolve) => {
@@ -52,33 +54,53 @@ export const getPoorInfo = async (id) => {
   })
 }
 
-// 提交申请材料
-export const submitApplication = async (applicationData) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        data: {
-          id: 1,
-          status: 'pending',
-          message: '申请已提交，等待审核'
-        }
-      })
-    }, 1000)
+// 获取贫困户申请列表
+export function getApplications() {
+  return request({
+    url: '/api/poverty/applications/',
+    method: 'get'
   })
 }
 
-// 获取申请状态
-export const getApplicationStatus = async (id) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        data: {
-          id: 1,
-          status: 'approved',
-          reviewNotes: '符合条件，已通过审核'
-        }
-      })
-    }, 1000)
+// 提交贫困户申请
+export function submitApplication(data) {
+  return request({
+    url: '/api/poverty/applications/',
+    method: 'post',
+    data
+  })
+}
+
+// 获取申请详情
+export function getApplicationDetail(id) {
+  return request({
+    url: `/api/poverty/applications/${id}/`,
+    method: 'get'
+  })
+}
+
+// 取消申请
+export function cancelApplication(id) {
+  return request({
+    url: `/api/poverty/applications/${id}/`,
+    method: 'delete'
+  })
+}
+
+// 获取援助记录
+export function getAssistanceRecords() {
+  return request({
+    url: '/api/poverty/assistance-records/',
+    method: 'get'
+  })
+}
+
+// 提交援助记录
+export function submitAssistanceRecord(data) {
+  return request({
+    url: '/api/poverty/assistance-records/',
+    method: 'post',
+    data
   })
 }
 

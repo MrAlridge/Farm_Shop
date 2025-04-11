@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { ElConfigProvider } from 'element-plus'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
-import NavHeader from '@/components/NavHeader.vue'
+import NavBar from '@/components/NavBar.vue'
 import NavFooter from '@/components/NavFooter.vue'
 import NavMenu from './components/NavMenu.vue'
 import ErrorHandler from './components/ErrorHandler.vue'
@@ -29,7 +29,7 @@ const toggleDarkMode = () => {
     <div class="app-container" :class="{ 'dark-mode': isDarkMode }">
       <el-container>
         <el-header>
-          <nav-header @toggle-dark-mode="toggleDarkMode" />
+          <nav-bar @toggle-dark-mode="toggleDarkMode" />
         </el-header>
         <el-main>
           <router-view />

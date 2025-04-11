@@ -1,271 +1,170 @@
 <template>
   <div class="policies-container">
-    <el-row :gutter="20">
-      <!-- 政策分类导航 -->
-      <el-col :span="6">
-        <el-card class="category-card">
-          <template #header>
-            <div class="card-header">
-              <span>政策分类</span>
-            </div>
-          </template>
-          <el-menu
-            :default-active="activeCategory"
-            class="category-menu"
-            @select="handleCategorySelect"
+    <el-card class="policies-card">
+      <template #header>
+        <div class="card-header">
+          <span>扶贫政策</span>
+          <el-input
+            v-model="searchQuery"
+            placeholder="搜索政策"
+            class="search-input"
+            clearable
           >
-            <el-menu-item index="all">
-              <el-icon><Document /></el-icon>
-              <span>全部政策</span>
-            </el-menu-item>
-            <el-menu-item index="industry">
-              <el-icon><Shop /></el-icon>
-              <span>产业扶贫</span>
-            </el-menu-item>
-            <el-menu-item index="education">
-              <el-icon><Reading /></el-icon>
-              <span>教育扶贫</span>
-            </el-menu-item>
-            <el-menu-item index="health">
-              <el-icon><FirstAidKit /></el-icon>
-              <span>医疗扶贫</span>
-            </el-menu-item>
-            <el-menu-item index="employment">
-              <el-icon><Briefcase /></el-icon>
-              <span>就业扶贫</span>
-            </el-menu-item>
-            <el-menu-item index="housing">
-              <el-icon><House /></el-icon>
-              <span>住房保障</span>
-            </el-menu-item>
-          </el-menu>
-        </el-card>
-      </el-col>
-
-      <!-- 政策列表 -->
-      <el-col :span="18">
-        <el-card>
-          <template #header>
-            <div class="card-header">
-              <span>政策列表</span>
-              <el-input
-                v-model="searchKeyword"
-                placeholder="搜索政策"
-                class="search-input"
-                clearable
-                @clear="handleSearch"
-                @input="handleSearch"
-              >
-                <template #prefix>
-                  <el-icon><Search /></el-icon>
-                </template>
-              </el-input>
-            </div>
-          </template>
-
-          <el-timeline>
-            <el-timeline-item
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
+        </div>
+      </template>
+      
+      <el-tabs v-model="activeTab" class="policies-tabs">
+        <el-tab-pane label="全部政策" name="all">
+          <el-collapse v-model="activeCollapse">
+            <el-collapse-item
               v-for="policy in filteredPolicies"
               :key="policy.id"
-              :timestamp="policy.publishTime"
-              placement="top"
+              :title="policy.title"
+              :name="policy.id"
             >
-              <el-card class="policy-card">
-                <div class="policy-content">
-                  <div class="policy-header">
-                    <h3 class="title">{{ policy.title }}</h3>
-                    <el-tag :type="getPolicyType(policy.type)">
-                      {{ getPolicyTypeText(policy.type) }}
-                    </el-tag>
-                  </div>
-                  <div class="policy-body">
-                    <p class="summary">{{ policy.summary }}</p>
-                    <div class="policy-meta">
-                      <span class="source">来源：{{ policy.source }}</span>
-                      <span class="views">
-                        <el-icon><View /></el-icon>
-                        {{ policy.views }}
-                      </span>
-                    </div>
-                  </div>
-                  <div class="policy-footer">
-                    <el-button
-                      type="primary"
-                      size="small"
-                      @click="viewPolicyDetail(policy)"
-                    >
-                      查看详情
-                    </el-button>
-                  </div>
+              <div class="policy-content">
+                <p class="policy-meta">
+                  <span>发布时间：{{ policy.publishTime }}</span>
+                  <span>发布单位：{{ policy.publisher }}</span>
+                </p>
+                <div class="policy-text" v-html="policy.content"></div>
+                <div class="policy-actions">
+                  <el-button type="primary" link @click="applyForPolicy(policy)">
+                    申请该政策
+                  </el-button>
+                  <el-button type="primary" link @click="downloadPolicy(policy)">
+                    下载政策文件
+                  </el-button>
                 </div>
-              </el-card>
-            </el-timeline-item>
-          </el-timeline>
-
-          <!-- 分页 -->
-          <div class="pagination-container">
-            <el-pagination
-              v-model:current-page="currentPage"
-              v-model:page-size="pageSize"
-              :total="total"
-              :page-sizes="[10, 20, 30, 50]"
-              layout="total, sizes, prev, pager, next, jumper"
-              @size-change="handleSizeChange"
-              @current-change="handleCurrentChange"
-            />
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <!-- 政策详情对话框 -->
-    <el-dialog
-      v-model="detailDialogVisible"
-      :title="currentPolicy?.title"
-      width="60%"
-    >
-      <div v-if="currentPolicy" class="policy-detail">
-        <div class="detail-header">
-          <div class="meta-info">
-            <span class="source">来源：{{ currentPolicy.source }}</span>
-            <span class="time">发布时间：{{ currentPolicy.publishTime }}</span>
-            <span class="views">
-              <el-icon><View /></el-icon>
-              {{ currentPolicy.views }}
-            </span>
-          </div>
-        </div>
-        <div class="detail-content" v-html="currentPolicy.content"></div>
-        <div class="detail-footer">
-          <el-button type="primary" @click="downloadPolicy(currentPolicy)">
-            下载政策文件
-          </el-button>
-        </div>
-      </div>
-    </el-dialog>
+              </div>
+            </el-collapse-item>
+          </el-collapse>
+        </el-tab-pane>
+        
+        <el-tab-pane label="已申请" name="applied">
+          <el-table :data="appliedPolicies" style="width: 100%">
+            <el-table-column prop="title" label="政策名称" />
+            <el-table-column prop="applyTime" label="申请时间" width="180" />
+            <el-table-column prop="status" label="状态" width="120">
+              <template #default="{ row }">
+                <el-tag :type="getStatusType(row.status)">
+                  {{ row.status }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="120">
+              <template #default="{ row }">
+                <el-button type="primary" link @click="viewPolicyDetail(row)">
+                  查看详情
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-tab-pane>
+      </el-tabs>
+    </el-card>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { usePoorStore } from '@/store/modules/poor'
+import { ref, computed } from 'vue'
+import { Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import {
-  Document,
-  Shop,
-  Reading,
-  FirstAidKit,
-  Briefcase,
-  House,
-  Search,
-  View
-} from '@element-plus/icons-vue'
+import { usePoorStore } from '@/store/modules/poor'
 
 const poorStore = usePoorStore()
-const activeCategory = ref('all')
-const searchKeyword = ref('')
-const currentPage = ref(1)
-const pageSize = ref(10)
-const total = ref(0)
-const policies = ref([])
-const currentPolicy = ref(null)
-const detailDialogVisible = ref(false)
+const searchQuery = ref('')
+const activeTab = ref('all')
+const activeCollapse = ref([])
 
-// 获取政策类型
-const getPolicyType = (type) => {
-  const typeMap = {
-    'industry': 'success',
-    'education': 'primary',
-    'health': 'warning',
-    'employment': 'info',
-    'housing': 'danger'
+// 模拟政策数据
+const policies = ref([
+  {
+    id: 1,
+    title: '农村危房改造补助政策',
+    publishTime: '2024-01-15',
+    publisher: '住房和城乡建设部',
+    content: `
+      <p>为改善农村贫困家庭住房条件，特制定本政策：</p>
+      <p>1. 补助对象：建档立卡贫困户、低保户、农村分散供养特困人员、贫困残疾人家庭</p>
+      <p>2. 补助标准：每户补助2-3万元</p>
+      <p>3. 申请流程：向村委会提出申请，经审核后报乡镇政府审批</p>
+    `,
+    status: 'available'
+  },
+  {
+    id: 2,
+    title: '产业扶贫项目支持政策',
+    publishTime: '2024-02-20',
+    publisher: '农业农村部',
+    content: `
+      <p>为促进贫困地区产业发展，特制定本政策：</p>
+      <p>1. 支持范围：特色种植、养殖、农产品加工等产业</p>
+      <p>2. 支持方式：提供技术培训、资金补贴、市场对接等服务</p>
+      <p>3. 申请条件：建档立卡贫困户，有产业发展意愿和能力</p>
+    `,
+    status: 'available'
   }
-  return typeMap[type] || 'info'
-}
+])
 
-// 获取政策类型文本
-const getPolicyTypeText = (type) => {
-  const typeMap = {
-    'industry': '产业扶贫',
-    'education': '教育扶贫',
-    'health': '医疗扶贫',
-    'employment': '就业扶贫',
-    'housing': '住房保障'
+// 模拟已申请政策数据
+const appliedPolicies = ref([
+  {
+    id: 3,
+    title: '教育扶贫资助政策',
+    applyTime: '2024-03-01',
+    status: '审核中'
   }
-  return typeMap[type] || type
-}
+])
 
-// 处理分类选择
-const handleCategorySelect = (index) => {
-  activeCategory.value = index
-  currentPage.value = 1
-  fetchPolicies()
-}
-
-// 处理搜索
-const handleSearch = () => {
-  currentPage.value = 1
-  fetchPolicies()
-}
-
-// 处理分页大小变化
-const handleSizeChange = (val) => {
-  pageSize.value = val
-  fetchPolicies()
-}
-
-// 处理页码变化
-const handleCurrentChange = (val) => {
-  currentPage.value = val
-  fetchPolicies()
-}
-
-// 查看政策详情
-const viewPolicyDetail = async (policy) => {
-  try {
-    const res = await poorStore.getPolicyDetail(policy.id)
-    currentPolicy.value = res.data
-    detailDialogVisible.value = true
-  } catch (error) {
-    ElMessage.error('获取政策详情失败')
-  }
-}
-
-// 下载政策文件
-const downloadPolicy = async (policy) => {
-  try {
-    await poorStore.downloadPolicyFile(policy.id)
-    ElMessage.success('下载成功')
-  } catch (error) {
-    ElMessage.error('下载失败')
-  }
-}
-
-// 获取政策列表
-const fetchPolicies = async () => {
-  try {
-    const params = {
-      category: activeCategory.value,
-      keyword: searchKeyword.value,
-      page: currentPage.value,
-      pageSize: pageSize.value
-    }
-    const res = await poorStore.getPolicies(params)
-    policies.value = res.data.list
-    total.value = res.data.total
-  } catch (error) {
-    ElMessage.error('获取政策列表失败')
-  }
-}
-
-// 计算过滤后的政策列表
 const filteredPolicies = computed(() => {
-  return policies.value
+  if (!searchQuery.value) return policies.value
+  const query = searchQuery.value.toLowerCase()
+  return policies.value.filter(policy => 
+    policy.title.toLowerCase().includes(query) ||
+    policy.content.toLowerCase().includes(query)
+  )
 })
 
-onMounted(() => {
-  fetchPolicies()
-})
+const getStatusType = (status) => {
+  const statusMap = {
+    '审核中': 'warning',
+    '已通过': 'success',
+    '已拒绝': 'danger',
+    'available': 'info'
+  }
+  return statusMap[status] || 'info'
+}
+
+const applyForPolicy = async (policy) => {
+  try {
+    await poorStore.applyForPolicy(policy.id)
+    ElMessage.success('申请提交成功')
+    // 更新已申请列表
+    appliedPolicies.value.push({
+      id: policy.id,
+      title: policy.title,
+      applyTime: new Date().toLocaleDateString(),
+      status: '审核中'
+    })
+  } catch (error) {
+    ElMessage.error(error.message || '申请失败')
+  }
+}
+
+const downloadPolicy = (policy) => {
+  // 模拟下载政策文件
+  ElMessage.success('开始下载政策文件')
+}
+
+const viewPolicyDetail = (policy) => {
+  // 跳转到政策详情页
+  console.log('查看政策详情:', policy)
+}
 </script>
 
 <style scoped>
@@ -273,12 +172,8 @@ onMounted(() => {
   padding: 20px;
 }
 
-.category-card {
-  height: 100%;
-}
-
-.category-menu {
-  border-right: none;
+.policies-card {
+  margin-top: 20px;
 }
 
 .card-header {
@@ -291,88 +186,32 @@ onMounted(() => {
   width: 300px;
 }
 
-.policy-card {
-  margin-bottom: 10px;
+.policies-tabs {
+  margin-top: 20px;
 }
 
 .policy-content {
   padding: 10px;
 }
 
-.policy-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.policy-header .title {
-  margin: 0;
-  font-size: 18px;
-}
-
-.policy-body {
-  margin-bottom: 10px;
-}
-
-.policy-body .summary {
-  color: var(--text-color-regular);
-  margin-bottom: 10px;
-}
-
 .policy-meta {
-  display: flex;
-  justify-content: space-between;
-  color: var(--text-color-secondary);
+  color: #666;
   font-size: 14px;
+  margin-bottom: 10px;
 }
 
-.policy-footer {
+.policy-meta span {
+  margin-right: 20px;
+}
+
+.policy-text {
+  line-height: 1.6;
+  margin-bottom: 15px;
+}
+
+.policy-actions {
   display: flex;
-  justify-content: flex-end;
-}
-
-.pagination-container {
-  margin-top: 20px;
-  display: flex;
-  justify-content: center;
-}
-
-.policy-detail {
-  padding: 20px;
-}
-
-.detail-header {
-  margin-bottom: 20px;
-}
-
-.meta-info {
-  display: flex;
-  gap: 20px;
-  color: var(--text-color-secondary);
-  font-size: 14px;
-}
-
-.detail-content {
-  line-height: 1.8;
-  margin-bottom: 20px;
-}
-
-.detail-footer {
-  display: flex;
-  justify-content: center;
-  margin-top: 20px;
-}
-
-:deep(.el-card__header) {
-  padding: 10px 20px;
-}
-
-:deep(.el-card__body) {
-  padding: 20px;
-}
-
-:deep(.el-timeline-item__node) {
-  background-color: var(--el-color-primary);
+  gap: 10px;
+  margin-top: 15px;
 }
 </style> 

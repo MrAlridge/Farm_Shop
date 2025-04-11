@@ -115,7 +115,7 @@ const routes = [
   },
   {
     path: '/poor',
-    name: 'Poor',
+    name: 'PoorLayout',
     component: () => import('@/views/poor/Layout.vue'),
     meta: { requiresPoorAuth: true },
     children: [
@@ -164,7 +164,7 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes
 })
 
@@ -178,13 +178,13 @@ router.beforeEach((to, from, next) => {
 
   // 需要普通用户认证的路由
   if (to.meta.requiresAuth && !userStore.isLoggedIn) {
-    next('/login')
+    next({ name: 'Login' })
     return
   }
 
   // 需要贫困户认证的路由
   if (to.meta.requiresPoorAuth && !poorStore.isLoggedIn) {
-    next('/poor/login')
+    next({ name: 'PoorLogin' })
     return
   }
 

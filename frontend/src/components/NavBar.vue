@@ -21,7 +21,7 @@
     </el-sub-menu>
 
     <!-- 用户中心 -->
-    <el-sub-menu index="user" class="user-menu">
+    <el-sub-menu index="user" class="user-menu" v-if="isLoggedIn">
       <template #title>
         <el-avatar :size="32" :src="userAvatar" />
         <span class="username">{{ username }}</span>
@@ -31,6 +31,12 @@
       <el-menu-item index="/user/security">安全设置</el-menu-item>
       <el-menu-item @click="handleLogout">退出登录</el-menu-item>
     </el-sub-menu>
+
+    <!-- 登录注册按钮 -->
+    <div class="auth-buttons" v-else>
+      <el-button type="primary" @click="handleLogin">登录</el-button>
+      <el-button @click="handleRegister">注册</el-button>
+    </div>
   </el-menu>
 </template>
 
@@ -59,6 +65,10 @@ const isPoorUser = computed(() => {
   return poorStore.isLoggedIn
 })
 
+const isLoggedIn = computed(() => {
+  return userStore.isLoggedIn || poorStore.isLoggedIn
+})
+
 const handleSelect = (key) => {
   activeIndex.value = key
 }
@@ -74,6 +84,22 @@ const handleLogout = async () => {
     router.push('/login')
   } catch (error) {
     ElMessage.error('退出登录失败')
+  }
+}
+
+const handleLogin = () => {
+  if (isPoorUser.value) {
+    router.push('/poor/login')
+  } else {
+    router.push('/login')
+  }
+}
+
+const handleRegister = () => {
+  if (isPoorUser.value) {
+    router.push('/poor/register')
+  } else {
+    router.push('/register')
   }
 }
 </script>
@@ -102,5 +128,14 @@ const handleLogout = async () => {
 :deep(.el-sub-menu__title) {
   height: 60px;
   line-height: 60px;
+}
+
+.auth-buttons {
+  float: right;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 20px;
 }
 </style> 
