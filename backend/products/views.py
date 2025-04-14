@@ -1,39 +1,48 @@
-# products/views.py
-from rest_framework import viewsets
-from .models import Product, Category
-from .serializers import ProductSerializer, CategorySerializer
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework import viewsets, filters
+from rest_framework.response import Response
+from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters
+from .models import Product
+from .serializers import ProductSerializer
+from .filters import ProductFilter  # 需要自定义的过滤器
+
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    filter_backends = [DjangoFilterBackend,filters.SearchFilter,filters.OrderingFilter]
-    filterset_fields = ['category', 'name'] #基于分类和名称过滤
-    search_fields = ['name', 'description'] #基于名称和描述搜索
-    ordering_fields = ['price', 'created_at'] #基于价格和创建日期排序
-    def get_permissions(self):
-        if self.action == 'create':
-          permission_classes = [IsAuthenticated]
-        elif self.action == 'list':
-            permission_classes = [IsAuthenticated]
-        else:
-            permission_classes = [IsAuthenticated]
-        return [permission() for permission in permission_classes]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
+    filterset_class = ProductFilter  # 用于筛选的过滤器类
+    search_fields = ['name', 'description']
+    ordering_fields = ['price', 'sales', 'created_at']
+    
+    @action(detail=False, methods=['get'])
+    def filter_products(self, request):
+        # 获取前端传递的筛选条件
+        min_price = request.query_params.get('min_price', 0)
+        max_price = request.query_params.get('max_price', 1000)
+        category = request.query_params.get('category', '')
+        sort_by = request.query_params.get('sort_by', 'price_asc')
 
-    def get_queryset(self):
-        """
-        管理员可以查看所有产品，用户只能查看自己添加的
-        """
-        if self.request.user.is_staff:
-            return Product.objects.all()
-        return Product.objects.filter(added_by=self.request.user)
+        # 基于筛选条件进行查询
+        products = Product.objects.filter(price__gte=min_price, price__lte=max_price)
 
-    # def perform_create(self, serializer):
-    #     serializer.save(added_by=self.request.user)
+        if category:
+            products = products.filter(category__name=category)
 
-class CategoryViewSet(viewsets.ModelViewSet):
+        # 根据排序方式进行排序
+        if sort_by == 'price_asc':
+            products = products.order_by('price')
+        elif sort_by == 'price_desc':
+            products = products.order_by('-price')
+        elif sort_by == 'sales_desc':
+            products = products.order_by('-sales')
+        elif sort_by == 'newest':
+            products = products.order_by('-created_at')
 
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
-    permission_classes = [IsAdminUser]
+        # 分页
+        page = self.paginate_queryset(products)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(products, many=True)
+        return Response(serializer.data)

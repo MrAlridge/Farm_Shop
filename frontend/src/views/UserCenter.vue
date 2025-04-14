@@ -175,6 +175,7 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/store/modules/user'
 import { ElMessage } from 'element-plus'
 import {
   User,
@@ -191,17 +192,17 @@ const activeMenu = ref('profile')
 
 // 用户信息
 const userInfo = ref({
-  username: '张三',
+  username: useUserStore.username,
   level: '普通会员',
-  avatar: '/avatar.jpg'
+  avatar: useUserStore.avatar || ''
 })
 
 // 个人资料表单
 const profileForm = reactive({
-  username: '张三',
-  phone: '13800138000',
-  email: 'zhangsan@example.com',
-  avatar: '/avatar.jpg'
+  username: useUserStore.username,
+  phone: useUserStore.phone,
+  email: useUserStore.email,
+  avatar: useUserStore.avatar || ''
 })
 
 const profileRules = {

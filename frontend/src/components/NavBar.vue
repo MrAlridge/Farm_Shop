@@ -14,6 +14,7 @@
       <el-menu-item index="/poor/dashboard">扶贫首页</el-menu-item>
       <el-menu-item index="/poor/policies">扶贫政策</el-menu-item>
       <el-menu-item index="/poor/cases">扶贫案例</el-menu-item>
+      <el-menu-item index="/poor/applications" v-if="isPoorUser">我的申请</el-menu-item>
       </el-sub-menu>
 
     <el-sub-menu index="user" class="user-menu" v-if="isLoggedIn">
@@ -23,7 +24,6 @@
       </template>
       <el-menu-item index="/user/profile">个人中心</el-menu-item>
       <el-menu-item index="/orders">我的订单</el-menu-item>
-      <el-menu-item index="/poor/applications" v-if="isPoorUser">我的申请</el-menu-item>
       <el-menu-item index="/user/address">收货地址</el-menu-item>
       <el-menu-item index="/user/security">安全设置</el-menu-item>
       <el-menu-item @click="handleLogout">退出登录</el-menu-item>
@@ -41,37 +41,37 @@ import { ref, computed, watch } from 'vue' // 引入 watch
 import { useRouter } from 'vue-router'
 // 假设 store 已正确设置和导入
 import { useUserStore } from '@/store/modules/user' // Pinia 示例
-import { usePoorStore } from '@/store/modules/poor' // Pinia 示例
+// import { usePoorStore } from '@/store/modules/poor' // Pinia 示例
 // import { useStore } from 'vuex' // 或者 Pinia 的 useStore
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const userStore = useUserStore()
-const poorStore = usePoorStore()
+// const poorStore = usePoorStore()
 
 // 根据当前路由初始化 activeIndex
 const activeIndex = ref(router.currentRoute.value.path)
 
 // 计算显示用户名
 const username = computed(() => {
-  return userStore.username || poorStore.username || '未登录'
+  return userStore.username || '未登录'
 })
 
 // 计算用户头像 URL，提供默认头像
 const userAvatar = computed(() => {
   // const defaultAvatar = '/images/avatars/default.png'; // 默认头像路径示例
-  return userStore.avatar || poorStore.avatar || ''
+  return userStore.avatar || ''
 })
 
 // 判断当前登录用户是否为贫困户
 const isPoorUser = computed(() => {
   // 可以基于 poorStore 登录状态，或者 userStore 中的用户类型字段
-  return poorStore.isLoggedIn?.value || userStore.userType === 'poor';
+  return userStore.userType === 'poor';
 })
 
 // 判断是否有用户登录（普通或贫困户）
 const isLoggedIn = computed(() => {
-  return userStore.isLoggedIn?.value || poorStore.isLoggedIn?.value
+  return userStore.token !== ''
 })
 
 // 处理菜单选择事件
@@ -85,11 +85,12 @@ const handleSelect = (key) => {
 const handleLogout = async () => {
   try {
     // 判断调用哪个 store 的 logout action
-    if (poorStore.isLoggedIn.value) {
-      await poorStore.logout()
-    } else if (userStore.isLoggedIn.value) {
-      await userStore.logout()
-    }
+    // if (poorStore.isLoggedIn.value) {
+    //   await poorStore.logout()
+    // } else if (userStore.isLoggedIn.value) {
+      
+    // }
+    await userStore.logout()
     ElMessage.success('退出登录成功')
     // 退出后跳转到登录页
     router.push('/login').then(() => {
@@ -116,6 +117,9 @@ const handleRegister = () => {
 watch(() => router.currentRoute.value.path, (newPath) => {
   activeIndex.value = newPath;
 }, { immediate: true }); // immediate: true 确保初始加载时也执行
+
+console.log('isPoorUser',isPoorUser.value)
+console.log('isLoggedIn',isLoggedIn.value)
 
 </script>
 

@@ -57,7 +57,7 @@ export const getPoorInfo = async (id) => {
 // 获取贫困户申请列表
 export function getApplications() {
   return request({
-    url: '/api/poverty/applications/',
+    url: '/poverty/applications/',
     method: 'get'
   })
 }
@@ -65,7 +65,7 @@ export function getApplications() {
 // 提交贫困户申请
 export function submitApplication(data) {
   return request({
-    url: '/api/poverty/applications/',
+    url: '/poverty/applications/',
     method: 'post',
     data
   })
@@ -74,7 +74,7 @@ export function submitApplication(data) {
 // 获取申请详情
 export function getApplicationDetail(id) {
   return request({
-    url: `/api/poverty/applications/${id}/`,
+    url: `/poverty/applications/${id}/`,
     method: 'get'
   })
 }
@@ -82,7 +82,7 @@ export function getApplicationDetail(id) {
 // 取消申请
 export function cancelApplication(id) {
   return request({
-    url: `/api/poverty/applications/${id}/`,
+    url: `/poverty/applications/${id}/`,
     method: 'delete'
   })
 }
@@ -90,7 +90,7 @@ export function cancelApplication(id) {
 // 获取援助记录
 export function getAssistanceRecords() {
   return request({
-    url: '/api/poverty/assistance-records/',
+    url: '/poverty/assistance-records/',
     method: 'get'
   })
 }
@@ -98,7 +98,7 @@ export function getAssistanceRecords() {
 // 提交援助记录
 export function submitAssistanceRecord(data) {
   return request({
-    url: '/api/poverty/assistance-records/',
+    url: '/poverty/assistance-records/',
     method: 'post',
     data
   })

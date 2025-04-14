@@ -1,7 +1,7 @@
 // src/utils/request.js
 import axios from 'axios';
 import { useUserStore } from '@/store/modules/user'; // Or your primary user store
-import { usePoorStore } from '@/store/modules/poor'; // If poor users have separate tokens
+// import { usePoorStore } from '@/store/modules/poor'; // If poor users have separate tokens
 import { ElMessage } from 'element-plus';
 import router from '@/router'; // Import router for redirection
 
@@ -14,10 +14,10 @@ const service = axios.create({
 service.interceptors.request.use(
   (config) => {
     const userStore = useUserStore();
-    const poorStore = usePoorStore(); // Adjust if using a single token
+    // const poorStore = usePoorStore(); // Adjust if using a single token
 
     // Determine which token to use (adapt this logic if you have a unified auth)
-    const token = userStore.token || poorStore.token;
+    const token = userStore.token;
 
     if (token) {
       // Standard JWT approach
@@ -53,9 +53,7 @@ service.interceptors.response.use(
           ElMessage.error('认证失败，请重新登录');
           // Clear token and redirect to login
           const userStore = useUserStore();
-          const poorStore = usePoorStore();
           userStore.logout(); // Assuming logout clears token etc.
-          poorStore.logout();
           // Determine login route based on context if needed, otherwise default
           router.push({ name: 'Login', query: { redirect: router.currentRoute.value.fullPath } });
           break;
