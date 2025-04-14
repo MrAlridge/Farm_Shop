@@ -10,6 +10,11 @@ const service = axios.create({
   timeout: 10000, // Request timeout
 });
 
+// 是否正在刷新token
+let isRefreshing = false;
+// 等待刷新token的请求队列
+let requests = [];
+
 // Request interceptor
 service.interceptors.request.use(
   (config) => {
@@ -39,24 +44,63 @@ service.interceptors.response.use(
     // Directly return data if successful
     return response.data; // DRF typically wraps responses, often we just want the data
   },
-  (error) => {
-    console.error('Response Error:', error.response || error.message); // for debug
-    let message = error.message;
+  async (error) => {
+    const userStore = useUserStore();
+    
     if (error.response) {
-      // Backend returned an error response
-      const data = error.response.data;
-      message = data?.detail || // DRF standard error
-                (typeof data === 'object' ? Object.values(data).flat().join('; ') : '请求失败'); // Handle validation errors etc.
+      const { status } = error.response;
+      const originalRequest = error.config;
 
-      switch (error.response.status) {
-        case 401: // Unauthorized
-          ElMessage.error('认证失败，请重新登录');
-          // Clear token and redirect to login
-          const userStore = useUserStore();
-          userStore.logout(); // Assuming logout clears token etc.
-          // Determine login route based on context if needed, otherwise default
-          router.push({ name: 'Login', query: { redirect: router.currentRoute.value.fullPath } });
-          break;
+      // token 失效的情况
+      if (status === 401 && error.response.data.code === 'token_not_valid') {
+        if (!isRefreshing) {
+          isRefreshing = true;
+          try {
+            // 尝试刷新token
+            const refreshSuccess = await userStore.refreshAccessToken();
+            isRefreshing = false;
+
+            if (refreshSuccess) {
+              // 重新发送队列中的请求
+              requests.forEach(cb => cb());
+              requests = [];
+              
+              // 重试当前请求
+              originalRequest.headers['Authorization'] = `Bearer ${userStore.token}`;
+              return service(originalRequest);
+            } else {
+              // 刷新失败，清空队列
+              requests.forEach(cb => cb(new Error('Token refresh failed')));
+              requests = [];
+              
+              // 跳转到登录页
+              router.push('/login');
+              return Promise.reject(new Error('请重新登录'));
+            }
+          } catch (refreshError) {
+            isRefreshing = false;
+            // 刷新token失败，执行登出
+            await userStore.logout();
+            router.push('/login');
+            return Promise.reject(refreshError);
+          }
+        } else {
+          // 正在刷新token，将请求加入队列
+          return new Promise((resolve, reject) => {
+            requests.push((error) => {
+              if (error) {
+                reject(error);
+              } else {
+                originalRequest.headers['Authorization'] = `Bearer ${userStore.token}`;
+                resolve(service(originalRequest));
+              }
+            });
+          });
+        }
+      }
+      
+      // 其他错误处理
+      switch (status) {
         case 403: // Forbidden
           ElMessage.error('权限不足，无法访问');
           break;
@@ -67,18 +111,18 @@ service.interceptors.response.use(
            ElMessage.error('服务器内部错误');
            break;
         default:
-          ElMessage.error(message || `请求错误: ${error.response.status}`);
+          ElMessage.error(error.response.data.detail || '请求失败');
       }
     } else if (error.request) {
       // Request was made but no response received
-      message = '无法连接到服务器，请检查网络';
-      ElMessage.error(message);
+      ElMessage.error('无法连接到服务器，请检查网络');
     } else {
       // Something happened in setting up the request
        ElMessage.error('请求发送失败');
     }
     
-    ElMessage.error(message);
+    ElMessage.error(error.message);
+    return Promise.reject(error);
   }
 );
 

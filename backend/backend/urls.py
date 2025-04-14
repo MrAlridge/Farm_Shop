@@ -4,6 +4,8 @@ from django.urls import path, include
 # 获取CSRF TOKEN 视图
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.http import JsonResponse
+from django.conf import settings
+from django.conf.urls.static import static
 
 @ensure_csrf_cookie
 def get_csrf_token(request):
@@ -15,4 +17,4 @@ urlpatterns = [
     path('api/poverty/', include('poverty.urls')),  # 添加 poverty 应用的 URL
     path('api/products/', include('products.urls')),  # 添加 products 应用的 URL
     path('api/orders/', include('orders.urls')),  # 添加 orders 应用的 URL
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

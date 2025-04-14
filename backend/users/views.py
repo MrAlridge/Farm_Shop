@@ -2,13 +2,15 @@
 from django.http import Http404
 from rest_framework import viewsets, status
 from rest_framework.views import APIView
-from .models import User, SocialSupport
-from .serializers import UserSerializer, SocialSupportSerializer
+from .models import User, SocialSupport, PoorApplication
+from .serializers import UserSerializer, SocialSupportSerializer, PoorApplicationSerializer
 from rest_framework.permissions import AllowAny,IsAuthenticated,IsAdminUser
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
+from rest_framework.decorators import action
+from django.utils import timezone
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -22,6 +24,8 @@ class UserViewSet(viewsets.ModelViewSet):
             permission_classes = [AllowAny]
         elif self.action == 'list':
             permission_classes = [IsAdminUser]
+        elif self.action == 'me':  # 添加 me 动作的权限
+            permission_classes = [IsAuthenticated]
         # retrieve, update, partial_update, destroy 需要认证
         else:
            permission_classes = [IsAuthenticated]
@@ -41,6 +45,20 @@ class UserViewSet(viewsets.ModelViewSet):
         else:
              # 如果未认证或者请求的不是自己的信息且不是管理员
              return Response({"detail": "需要认证或没有权限查看此用户信息。"}, status=status.HTTP_403_FORBIDDEN)
+
+    @action(detail=False, methods=['GET'])
+    def me(self, request):
+        """
+        获取当前登录用户的信息
+        """
+        if not request.user.is_authenticated:
+            return Response(
+                {"detail": "未认证的用户。"}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+            
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
 
 class SocialSupportViewSet(viewsets.ModelViewSet):
     queryset = SocialSupport.objects.all()
@@ -71,24 +89,65 @@ class LoginView(APIView):
         password = request.data.get('password')
 
         if not username or not password:
-            return Response({'error': '请提供用户名和密码。'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'error': '请提供用户名和密码。'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        # 验证用户
-        user = authenticate(request=request, username=username, password=password)
+        user = authenticate(username=username, password=password)
 
         if user is not None:
-            # 验证成功，生成 JWT Tokens
             refresh = RefreshToken.for_user(user)
-            access_token = str(refresh.access_token)
-
-            # 准备响应数据
-            serializer = UserSerializer(user) # 序列化用户信息
-            response_data = {
+            serializer = UserSerializer(user)
+            
+            return Response({
                 'refresh': str(refresh),
-                'access': access_token,
-                'user': serializer.data # 将用户信息包含在响应中
-            }
-            return Response(response_data, status=status.HTTP_200_OK)
+                'access': str(refresh.access_token),
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'user_type': user.user_type,
+                    'is_staff': user.is_staff,
+                    **serializer.data
+                }
+            })
         else:
-            # 验证失败
-            return Response({'error': '用户名或密码无效。'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {'error': '用户名或密码无效。'}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+class PoorApplicationViewSet(viewsets.ModelViewSet):
+    serializer_class = PoorApplicationSerializer
+    
+    def get_queryset(self):
+        return PoorApplication.objects.filter(user=self.request.user)
+    
+    @action(detail=True, methods=['POST'])
+    def approve(self, request, pk=None):
+        application = self.get_object()
+        if not request.user.is_staff:
+            return Response({"detail": "没有权限进行此操作"}, status=status.HTTP_403_FORBIDDEN)
+            
+        application.status = 'approved'
+        application.reviewed_at = timezone.now()
+        application.save()
+        
+        # 更新用户类型
+        application.user.user_type = 'poor'
+        application.user.save()
+        
+        return Response({"detail": "申请已通过"})
+
+    @action(detail=True, methods=['POST'])
+    def reject(self, request, pk=None):
+        application = self.get_object()
+        if not request.user.is_staff:
+            return Response({"detail": "没有权限进行此操作"}, status=status.HTTP_403_FORBIDDEN)
+            
+        application.status = 'rejected'
+        application.reviewed_at = timezone.now()
+        application.review_comment = request.data.get('review_comment', '')
+        application.save()
+        
+        return Response({"detail": "申请已拒绝"})

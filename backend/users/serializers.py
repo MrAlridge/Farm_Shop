@@ -1,6 +1,6 @@
 # users/serializers.py
 from rest_framework import serializers
-from .models import User, SocialSupport
+from .models import User, SocialSupport, PoorApplication
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -18,3 +18,13 @@ class SocialSupportSerializer(serializers.ModelSerializer):
     class Meta:
         model = SocialSupport
         fields = ('user', 'company_name', 'contact_person')
+
+class PoorApplicationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PoorApplication
+        fields = ['id', 'reason', 'supporting_documents', 'status', 'created_at', 'reviewed_at', 'review_comment']
+        read_only_fields = ['status', 'reviewed_at', 'review_comment']
+
+    def create(self, validated_data):
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)

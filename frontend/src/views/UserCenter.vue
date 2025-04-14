@@ -8,7 +8,9 @@
             <el-avatar :size="100" :src="userInfo.avatar" />
           </div>
           <h3 class="username">{{ userInfo.username }}</h3>
-          <p class="user-level">会员等级：{{ userInfo.level }}</p>
+          <div class="user-type">
+            <el-tag :type="userTypeTag">{{ userTypeLabel }}</el-tag>
+          </div>
           
           <el-menu
             :default-active="activeMenu"
@@ -30,9 +32,15 @@
               <el-icon><List /></el-icon>
               <span>我的订单</span>
             </el-menu-item>
-            <el-menu-item index="favorites">
-              <el-icon><Star /></el-icon>
-              <span>我的收藏</span>
+            <!-- 普通用户显示申请入口 -->
+            <el-menu-item v-if="userStore.isSocialUser" index="poor-application">
+              <el-icon><Document /></el-icon>
+              <span>申请贫困户</span>
+            </el-menu-item>
+            <!-- 管理员显示审核入口 -->
+            <el-menu-item v-if="userStore.isAdminUser" index="application-review">
+              <el-icon><Check /></el-icon>
+              <span>申请审核</span>
             </el-menu-item>
           </el-menu>
         </el-card>
@@ -50,7 +58,7 @@
           </template>
           
           <el-form
-            ref="profileForm"
+            ref="profileFormRef"
             :model="profileForm"
             :rules="profileRules"
             label-width="100px">
@@ -63,252 +71,572 @@
             <el-form-item label="邮箱" prop="email">
               <el-input v-model="profileForm.email" />
             </el-form-item>
-            <el-form-item label="头像">
-              <el-upload
-                class="avatar-uploader"
-                action="/api/upload"
-                :show-file-list="false"
-                :on-success="handleAvatarSuccess">
-                <img v-if="profileForm.avatar" :src="profileForm.avatar" class="avatar">
-                <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
-              </el-upload>
-            </el-form-item>
           </el-form>
         </el-card>
         
-        <!-- 收货地址 -->
-        <el-card v-if="activeMenu === 'address'" class="content-card">
+        <!-- 贫困户申请 -->
+        <el-card v-if="activeMenu === 'poor-application'" class="content-card">
           <template #header>
             <div class="card-header">
-              <span>收货地址</span>
-              <el-button type="primary" @click="addAddress">新增地址</el-button>
+              <span>申请贫困户</span>
             </div>
           </template>
           
-          <el-table :data="addresses" style="width: 100%">
-            <el-table-column prop="name" label="收货人" width="120" />
-            <el-table-column prop="phone" label="手机号" width="120" />
-            <el-table-column prop="address" label="收货地址" />
-            <el-table-column label="操作" width="150">
-              <template #default="{ row }">
-                <el-button type="primary" link @click="editAddress(row)">
-                  编辑
-                </el-button>
-                <el-button type="danger" link @click="deleteAddress(row)">
-                  删除
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-card>
-        
-        <!-- 账户安全 -->
-        <el-card v-if="activeMenu === 'security'" class="content-card">
-          <template #header>
-            <div class="card-header">
-              <span>账户安全</span>
+          <div v-if="Array.isArray(poorApplications)" class="pending-notice">
+            <div v-if="hasPendingApplication" class="pending-notice">
+              <el-alert
+                title="您有正在审核中的申请"
+                type="warning"
+                :closable="false"
+                description="请耐心等待审核结果"
+              />
             </div>
-          </template>
           
+            <div v-else>
           <el-form
-            ref="securityForm"
-            :model="securityForm"
-            :rules="securityRules"
+                ref="poorApplicationFormRef"
+                :model="poorApplicationForm"
+                :rules="poorApplicationRules"
             label-width="100px">
-            <el-form-item label="原密码" prop="oldPassword">
+                <el-form-item label="申请标题" prop="title">
               <el-input
-                v-model="securityForm.oldPassword"
-                type="password"
-                show-password />
+                    v-model="poorApplicationForm.title"
+                    placeholder="请输入申请标题"
+                  />
             </el-form-item>
-            <el-form-item label="新密码" prop="newPassword">
+                
+                <el-form-item label="申请内容" prop="content">
               <el-input
-                v-model="securityForm.newPassword"
-                type="password"
-                show-password />
+                    v-model="poorApplicationForm.content"
+                    type="textarea"
+                    :rows="4"
+                    placeholder="请详细描述您的情况"
+                  />
             </el-form-item>
-            <el-form-item label="确认密码" prop="confirmPassword">
-              <el-input
-                v-model="securityForm.confirmPassword"
-                type="password"
-                show-password />
+                
+                <el-form-item label="证明材料">
+                  <el-upload
+                    action="/api/upload"
+                    :on-success="handleUploadSuccess"
+                    :on-error="handleUploadError"
+                    :before-upload="beforeUpload"
+                    multiple
+                  >
+                    <el-button type="primary">上传证明材料</el-button>
+                    <template #tip>
+                      <div class="el-upload__tip">
+                        支持jpg/png/pdf格式，单个文件不超过10MB
+                      </div>
+                    </template>
+                  </el-upload>
             </el-form-item>
+                
             <el-form-item>
-              <el-button type="primary" @click="changePassword">
-                修改密码
+                  <el-button type="primary" @click="handleSubmitApplication">
+                    提交申请
               </el-button>
             </el-form-item>
           </el-form>
+            </div>
+
+            <!-- 申请历史 -->
+            <div v-if="poorApplications.length > 0" class="application-history">
+              <el-divider>申请历史</el-divider>
+              <el-timeline>
+                <el-timeline-item
+                  v-for="app in poorApplications"
+                  :key="app.id"
+                  :type="getApplicationStatusType(app.status)"
+                  :timestamp="formatDate(app.created_at)"
+                >
+                  <el-card>
+                    <h4>
+                      状态：
+                      <el-tag :type="getApplicationStatusType(app.status)">
+                        {{ getApplicationStatusText(app.status) }}
+                      </el-tag>
+                    </h4>
+                    <p>申请原因：{{ app.reason }}</p>
+                    <p v-if="app.review_comment">审核意见：{{ app.review_comment }}</p>
+                  </el-card>
+                </el-timeline-item>
+              </el-timeline>
+            </div>
+          </div>
+
+          <!-- 添加加载状态 -->
+          <div v-else class="loading-state">
+            <el-skeleton :rows="3" animated />
+          </div>
         </el-card>
         
-        <!-- 我的订单 -->
-        <Orders v-if="activeMenu === 'orders'" />
-        
-        <!-- 我的收藏 -->
-        <el-card v-if="activeMenu === 'favorites'" class="content-card">
+        <!-- 管理员审核页面 -->
+        <el-card v-if="activeMenu === 'application-review'" class="content-card">
           <template #header>
             <div class="card-header">
-              <span>我的收藏</span>
+              <span>贫困户申请审核</span>
+              <el-button type="primary" @click="fetchPendingApplications">
+                刷新列表
+              </el-button>
             </div>
           </template>
           
-          <el-row :gutter="20">
-            <el-col :span="6" v-for="item in favorites" :key="item.id">
-              <el-card :body-style="{ padding: '0px' }" class="favorite-item">
-                <img :src="item.image" class="favorite-image">
-                <div class="favorite-info">
-                  <h4>{{ item.name }}</h4>
-                  <p class="price">¥{{ item.price }}</p>
-                  <el-button type="primary" @click="viewProduct(item.id)">
-                    查看详情
+          <el-table 
+            v-loading="loading"
+            :data="pendingApplications"
+            style="width: 100%"
+          >
+            <el-table-column 
+              v-for="col in columns"
+              :key="col.prop"
+              v-bind="col"
+            >
+              <template #default="{ row }" v-if="col.prop === 'created_at'">
+                {{ formatDate(row.created_at) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="200" fixed="right">
+              <template #default="{ row }">
+                <el-button
+                  type="success"
+                  size="small"
+                  @click="handleApprove(row)"
+                >
+                  通过
+                </el-button>
+                <el-button
+                  type="danger"
+                  size="small"
+                  @click="handleReject(row)"
+                >
+                  拒绝
                   </el-button>
-                </div>
-              </el-card>
-            </el-col>
-          </el-row>
+              </template>
+            </el-table-column>
+          </el-table>
+
+          <!-- 添加分页组件 -->
+          <div class="pagination-container">
+            <el-pagination
+              v-model:current-page="pagination.currentPage"
+              v-model:page-size="pagination.pageSize"
+              :total="pagination.total"
+              :page-sizes="[10, 20, 50, 100]"
+              layout="total, sizes, prev, pager, next"
+              @size-change="handleSizeChange"
+              @current-change="handlePageChange"
+            />
+          </div>
+
+          <el-empty
+            v-if="!loading && pendingApplications.length === 0"
+            description="暂无待审核的申请"
+          />
         </el-card>
       </el-col>
     </el-row>
+
+    <!-- 拒绝原因对话框 -->
+    <el-dialog v-model="rejectDialogVisible" title="拒绝原因" width="500px">
+      <el-form :model="rejectForm">
+        <el-form-item label="拒绝原因" prop="reason">
+          <el-input
+            v-model="rejectForm.reason"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入拒绝原因"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="rejectDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="confirmReject">
+            确认
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/modules/user'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   User,
   Location,
   Lock,
   List,
-  Star,
+  Document,
+  Check,
   Plus
 } from '@element-plus/icons-vue'
-import Orders from './Orders.vue'
+import { 
+  getPovertyApplications,
+  submitPovertyApplication,
+  getPovertyApplicationDetail,
+  cancelPovertyApplication,
+  approvePovertyApplication,
+  rejectPovertyApplication
+} from '@/api/user'
+import { 
+  formatDate, 
+  formatPhone, 
+  formatStatus 
+} from '@/utils/format'
 
 const router = useRouter()
+const userStore = useUserStore()
 const activeMenu = ref('profile')
 
+// 添加环境变量的引用
+const isDevelopment = import.meta.env.DEV // Vite 中使用 import.meta.env 替代 process.env
+
 // 用户信息
-const userInfo = ref({
-  username: useUserStore.username,
-  level: '普通会员',
-  avatar: useUserStore.avatar || ''
+const userInfo = computed(() => ({
+  username: userStore.username,
+  avatar: userStore.userInfo.avatar || ''
+}))
+
+// 用户类型相关
+const userTypeLabel = computed(() => {
+  const typeMap = {
+    'social': '普通用户',
+    'poor': '贫困户',
+    'admin': '管理员'
+  }
+  return typeMap[userStore.userType] || '普通用户'
 })
 
-// 个人资料表单
-const profileForm = reactive({
-  username: useUserStore.username,
-  phone: useUserStore.phone,
-  email: useUserStore.email,
-  avatar: useUserStore.avatar || ''
+const userTypeTag = computed(() => {
+  const typeMap = {
+    'social': 'info',
+    'poor': 'success',
+    'admin': 'danger'
+  }
+  return typeMap[userStore.userType] || 'info'
 })
 
+// 表单验证规则
 const profileRules = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
+    { min: 2, max: 20, message: '长度在 2 到 20 个字符', trigger: 'blur' }
   ],
   phone: [
-    { required: true, message: '请输入手机号', trigger: 'blur' },
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
+    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' }
   ],
   email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
   ]
 }
 
-// 收货地址
-const addresses = ref([
-  {
-    id: 1,
-    name: '张三',
-    phone: '13800138000',
-    address: '北京市朝阳区xxx街道xxx号'
-  }
-])
-
-// 账户安全表单
-const securityForm = reactive({
-  oldPassword: '',
-  newPassword: '',
-  confirmPassword: ''
-})
-
-const securityRules = {
-  oldPassword: [
-    { required: true, message: '请输入原密码', trigger: 'blur' }
+const poorApplicationRules = {
+  title: [
+    { required: true, message: '请输入申请标题', trigger: 'blur' },
+    { min: 10, message: '申请标题至少10个字符', trigger: 'blur' }
   ],
-  newPassword: [
-    { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '长度在 6 到 20 个字符', trigger: 'blur' }
-  ],
-  confirmPassword: [
-    { required: true, message: '请再次输入新密码', trigger: 'blur' },
-    {
-      validator: (rule, value, callback) => {
-        if (value !== securityForm.newPassword) {
-          callback(new Error('两次输入密码不一致'))
-        } else {
-          callback()
-        }
-      },
-      trigger: 'blur'
-    }
+  content: [
+    { required: true, message: '请输入申请内容', trigger: 'blur' },
+    { min: 10, message: '申请内容至少10个字符', trigger: 'blur' }
   ]
 }
 
-// 收藏列表
-const favorites = ref([
-  {
-    id: 1,
-    name: '有机大米',
-    price: 39.9,
-    image: '/product1.jpg'
-  },
-  {
-    id: 2,
-    name: '土鸡蛋',
-    price: 29.9,
-    image: '/product2.jpg'
-  }
-])
+// 个人资料表单
+const profileFormRef = ref(null)
+const profileForm = ref({
+  username: userStore.username || '',
+  phone: userStore.phoneNumber || '',
+  email: userStore.userInfo.email || ''
+})
 
+// 贫困户申请相关
+const poorApplications = ref([])
+const poorApplicationFormRef = ref(null)
+const poorApplicationForm = ref({
+  title: '',
+  type: 'poverty', // 申请类型为贫困户
+  content: '',     // 申请内容
+  attachments: []  // 附件列表
+})
+
+const hasPendingApplication = computed(() => {
+  return Array.isArray(poorApplications.value) && 
+         poorApplications.value.some(app => app.status === 'pending')
+})
+
+// 管理员审核相关
+const pendingApplications = ref([])
+const loading = ref(false)
+const rejectDialogVisible = ref(false)
+const rejectForm = ref({
+  reason: '',
+  applicationId: null
+})
+
+// 分页相关
+const pagination = ref({
+  currentPage: 1,
+  pageSize: 10,
+  total: 0
+})
+
+// 方法
 const handleMenuSelect = (index) => {
   activeMenu.value = index
 }
 
-const saveProfile = () => {
-  // TODO: 实现保存个人资料逻辑
+const saveProfile = async () => {
+  if (!profileFormRef.value) return
+  
+  await profileFormRef.value.validate(async (valid) => {
+    if (valid) {
+      try {
+        await userStore.updateUserInfo(profileForm.value)
   ElMessage.success('保存成功')
+      } catch (error) {
+        ElMessage.error('保存失败')
+      }
+    }
+  })
 }
 
-const handleAvatarSuccess = (response) => {
-  profileForm.avatar = response.url
+const handleSubmitApplication = async () => {
+  if (!poorApplicationFormRef.value) return
+
+  await poorApplicationFormRef.value.validate(async (valid) => {
+    if (valid) {
+      try {
+        const applicationData = {
+          title: poorApplicationForm.value.title,
+          content: poorApplicationForm.value.content,
+          // 不需要发送 user 字段，由后端自动设置
+        }
+
+        await submitPovertyApplication(applicationData)
+        ElMessage.success('申请提交成功')
+        await fetchApplications()
+        poorApplicationForm.value = {
+          title: '',
+          content: '',
+          attachments: []
+        }
+      } catch (error) {
+        console.error('提交申请失败:', error)
+        ElMessage.error(error.response?.data?.detail || '提交申请失败')
+      }
+    }
+  })
 }
 
-const addAddress = () => {
-  // TODO: 实现新增地址逻辑
+const handleUploadSuccess = (response) => {
+  poorApplicationForm.value.supporting_documents = response.url
+  ElMessage.success('上传成功')
 }
 
-const editAddress = (address) => {
-  // TODO: 实现编辑地址逻辑
+const handleUploadError = () => {
+  ElMessage.error('上传失败')
 }
 
-const deleteAddress = (address) => {
-  // TODO: 实现删除地址逻辑
+const beforeUpload = (file) => {
+  const isValidType = ['image/jpeg', 'image/png', 'application/pdf'].includes(file.type)
+  if (!isValidType) {
+    ElMessage.error('只能上传 JPG/PNG/PDF 格式的文件')
+    return false
+  }
+  return true
 }
 
-const changePassword = () => {
-  // TODO: 实现修改密码逻辑
-  ElMessage.success('密码修改成功')
+const getApplicationStatusType = (status) => {
+  const typeMap = {
+    'pending': 'warning',
+    'approved': 'success',
+    'rejected': 'danger'
+  }
+  return typeMap[status] || 'info'
 }
 
-const viewProduct = (id) => {
-  router.push(`/product/${id}`)
+// 状态文本映射
+const statusMap = {
+  'pending': '审核中',
+  'approved': '已通过',
+  'rejected': '已拒绝'
 }
+
+// 在模板中使用格式化函数
+const getApplicationStatusText = (status) => {
+  return formatStatus(status, statusMap)
+}
+
+// 格式化手机号显示
+const formatPhoneDisplay = computed(() => {
+  return formatPhone(profileForm.value.phone)
+})
+
+const handleApprove = async (application) => {
+  try {
+    await ElMessageBox.confirm(
+      '确定要通过该申请吗？通过后申请人将成为贫困户用户',
+      '提示',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    await approvePovertyApplication(application.id)
+    ElMessage.success('已通过申请')
+    await fetchPendingApplications() // 刷新列表
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('审核失败:', error)
+      ElMessage.error(error.response?.data?.detail || '审核失败')
+    }
+  }
+}
+
+const handleReject = async (application) => {
+  try {
+    const { value: reason } = await ElMessageBox.prompt(
+      '请输入拒绝原因',
+      '提示',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+        inputValidator: (value) => {
+          if (!value) {
+            return '请输入拒绝原因'
+          }
+          return true
+        }
+      }
+    )
+    
+    if (reason) {
+      await rejectPovertyApplication(application.id, { review_comment: reason })
+      ElMessage.success('已拒绝申请')
+      await fetchPendingApplications() // 刷新列表
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('审核失败:', error)
+      ElMessage.error(error.response?.data?.detail || '审核失败')
+    }
+  }
+}
+
+const viewDocument = (url) => {
+  window.open(url, '_blank')
+}
+
+const fetchApplications = async () => {
+  try {
+    const response = await getPovertyApplications()
+    poorApplications.value = response.data || []
+  } catch (error) {
+    console.error('获取申请列表失败:', error)
+    ElMessage.error('获取申请列表失败')
+  }
+}
+
+const fetchPendingApplications = async () => {
+  loading.value = true
+  try {
+    const response = await getPovertyApplications()
+    console.log('获取到的原始数据:', response)
+
+    if (response && Array.isArray(response.data)) {
+      pendingApplications.value = response.data.filter(app => app.status === 'pending')
+      // 如果原始响应中包含分页信息
+      if (response.total) {
+        pagination.value.total = response.total
+      }
+    } else {
+      console.warn('未获取到有效数据')
+      pendingApplications.value = []
+    }
+  } catch (error) {
+    console.error('获取待审核申请失败:', error)
+    ElMessage.error('获取待审核申请失败')
+    pendingApplications.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleCancelApplication = async (application) => {
+  try {
+    await ElMessageBox.confirm(
+      '确定要取消该申请吗？此操作不可恢复',
+      '提示',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    await cancelPovertyApplication(application.id)
+    ElMessage.success('申请已取消')
+    await fetchApplications()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('取消申请失败:', error)
+      ElMessage.error('取消申请失败')
+    }
+  }
+}
+
+// 修改表格列定义，确保与后端返回的数据字段匹配
+const columns = [
+  {
+    prop: 'username',
+    label: '申请人',
+    width: '120'
+  },
+  {
+    prop: 'title',
+    label: '申请标题'
+  },
+  {
+    prop: 'content',
+    label: '申请内容',
+    showOverflowTooltip: true
+  },
+  {
+    prop: 'created_at',
+    label: '申请时间',
+    width: '180',
+    formatter: (row) => formatDate(row.created_at)
+  }
+]
+
+// 处理页码变化
+const handlePageChange = (page) => {
+  pagination.value.currentPage = page
+  fetchPendingApplications()
+}
+
+// 处理每页条数变化
+const handleSizeChange = (size) => {
+  pagination.value.pageSize = size
+  pagination.value.currentPage = 1
+  fetchPendingApplications()
+}
+
+onMounted(async () => {
+  const userStore = useUserStore()
+  if (userStore.isAdminUser) {
+    await fetchPendingApplications()
+  } else if (userStore.isSocialUser) {
+    await fetchApplications()
+  }
+})
 </script>
 
 <style scoped>
@@ -318,27 +646,23 @@ const viewProduct = (id) => {
 
 .user-info-card {
   text-align: center;
+  padding: 20px;
 }
 
 .user-avatar {
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
 .username {
   margin: 10px 0;
 }
 
-.user-level {
-  color: #909399;
+.user-type {
   margin-bottom: 20px;
-}
-
-.user-menu {
-  border-right: none;
 }
 
 .content-card {
-  margin-bottom: 20px;
+  min-height: 500px;
 }
 
 .card-header {
@@ -347,48 +671,52 @@ const viewProduct = (id) => {
   align-items: center;
 }
 
-.avatar-uploader {
-  text-align: center;
-}
-
-.avatar-uploader .avatar {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-}
-
-.avatar-uploader-icon {
-  font-size: 28px;
-  color: #8c939d;
-  width: 100px;
-  height: 100px;
-  line-height: 100px;
-  text-align: center;
-  border: 1px dashed #d9d9d9;
-  border-radius: 50%;
-}
-
-.favorite-item {
+.pending-notice {
   margin-bottom: 20px;
 }
 
-.favorite-image {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
+.application-history {
+  margin-top: 30px;
 }
 
-.favorite-info {
-  padding: 14px;
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
-.favorite-info h4 {
-  margin: 0 0 10px 0;
+.loading-state {
+  padding: 20px;
 }
 
-.price {
-  color: #f56c6c;
-  font-weight: bold;
+.el-upload__tip {
+  font-size: 12px;
+  color: #606266;
+  margin-top: 7px;
+}
+
+.application-form {
+  margin-bottom: 20px;
+}
+
+/* 添加表格内容过长时的样式 */
+:deep(.el-table .cell) {
+  white-space: pre-line;
+}
+
+.debug-info {
   margin: 10px 0;
+  padding: 10px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.pagination-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
 }
 </style> 

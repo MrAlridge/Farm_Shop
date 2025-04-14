@@ -10,9 +10,23 @@
         </div>
       </template>
       
+      <div v-if="error" class="error-message">
+        <el-alert
+          :title="error"
+          type="error"
+          show-icon
+          :closable="false"
+        />
+      </div>
+      
       <el-tabs v-model="activeTab" class="applications-tabs">
         <el-tab-pane label="全部申请" name="all">
-          <el-table :data="applications" style="width: 100%">
+          <el-table 
+            v-loading="loading"
+            :data="applications" 
+            style="width: 100%"
+            :empty-text="loading ? '加载中...' : '暂无数据'"
+          >
             <el-table-column prop="id" label="申请编号" width="120" />
             <el-table-column prop="type" label="申请类型" width="120">
               <template #default="{ row }">
@@ -139,26 +153,69 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { usePoorStore } from '@/store/modules/poor'
-import { getApplications, cancelApplication } from '@/api/poor'
+// import { usePoorStore } from '@/store/modules/poor'
+// import { getApplications, cancelApplication } from '@/api/poor'
+import { getApplications, cancelApplication } from '@/api/user'
+import { useUserStore } from '@/store/modules/user'
 
 const router = useRouter()
-const poorStore = usePoorStore()
+const userStore = useUserStore()
 const activeTab = ref('all')
 const applications = ref([])
+const loading = ref(false)
+const error = ref(null)
+
+// 检查用户权限
+const checkUserPermission = () => {
+  if (!userStore.isLoggedIn) {
+    ElMessage.error('请先登录')
+    router.push('/login')
+    return false
+  }
+  
+  if (!userStore.isPoorUser) {
+    ElMessage.error('只有贫困户用户可以访问此页面')
+    router.push('/')
+    return false
+  }
+  
+  return true
+}
 
 // 获取申请列表
 const fetchApplications = async () => {
+  if (!checkUserPermission()) return
+  
+  loading.value = true
+  error.value = null
+  
   try {
+    // 先尝试刷新用户信息，确保token有效
+    await userStore.fetchUserInfo()
+    
     const response = await getApplications()
     applications.value = response.data
-  } catch (error) {
-    ElMessage.error('获取申请列表失败')
+  } catch (err) {
+    console.error('获取申请列表失败:', err)
+    error.value = err.message
+    
+    if (err.response?.status === 401) {
+      ElMessage.error('登录已过期，请重新登录')
+      await userStore.logout()
+      router.push('/login')
+    } else if (err.response?.status === 403) {
+      ElMessage.error('没有权限访问此功能')
+    } else {
+      ElMessage.error(err.response?.data?.detail || '获取申请列表失败')
+    }
+  } finally {
+    loading.value = false
   }
 }
 
-onMounted(() => {
-  fetchApplications()
+// 在组件挂载时获取数据
+onMounted(async () => {
+  await fetchApplications()
 })
 
 const pendingApplications = computed(() => 
@@ -222,7 +279,7 @@ const viewApplicationDetail = (application) => {
 const handleCancelApplication = async (application) => {
   try {
     await ElMessageBox.confirm(
-      '确定要取消该申请吗？',
+      '确定要取消该申请吗？此操作不可恢复',
       '提示',
       {
         confirmButtonText: '确定',
@@ -230,12 +287,17 @@ const handleCancelApplication = async (application) => {
         type: 'warning'
       }
     )
+    
+    const loading = ElMessage.loading('正在取消申请...', 0)
     await cancelApplication(application.id)
+    loading.close()
+    
     await fetchApplications()
-    ElMessage.success('申请已取消')
+    ElMessage.success('申请已成功取消')
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('取消申请失败')
+      console.error('取消申请失败:', error)
+      ElMessage.error(error.message || '取消申请失败')
     }
   }
 }
@@ -258,5 +320,20 @@ const handleCancelApplication = async (application) => {
 
 .applications-tabs {
   margin-top: 20px;
+}
+
+/* 添加一些响应式样式 */
+@media screen and (max-width: 768px) {
+  .applications-container {
+    padding: 10px;
+  }
+  
+  .el-table {
+    font-size: 14px;
+  }
+}
+
+.error-message {
+  margin-bottom: 20px;
 }
 </style> 
