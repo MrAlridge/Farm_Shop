@@ -227,4 +227,12 @@ export const applyForEducation = async (assistanceId) => {
       })
     }, 1000)
   })
-} 
+}
+
+export const getApplicationStatus = async (id) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      
+    })
+  })
+}

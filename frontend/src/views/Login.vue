@@ -6,13 +6,13 @@
       </template>
       
       <el-form
-        ref="loginForm"
-        :model="loginForm"
+        ref="loginFormRef"
+        :model="loginData"
         :rules="rules"
         label-width="80px"
         class="login-form">
         <el-form-item label="用户名" prop="username">
-          <el-input v-model="loginForm.username" placeholder="请输入用户名">
+          <el-input v-model="loginData.username" placeholder="请输入用户名">
             <template #prefix>
               <el-icon><User /></el-icon>
             </template>
@@ -21,7 +21,7 @@
         
         <el-form-item label="密码" prop="password">
           <el-input
-            v-model="loginForm.password"
+            v-model="loginData.password"
             type="password"
             placeholder="请输入密码"
             show-password>
@@ -45,12 +45,16 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useUserStore } from '@/store/modules/user'
 import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
-const loginForm = reactive({
+const userStore = useUserStore()
+const loginFormRef = ref(null)
+
+const loginData = reactive({
   username: '',
   password: ''
 })
@@ -69,24 +73,21 @@ const rules = {
 }
 
 const handleLogin = async () => {
-  try {
-    loading.value = true
-    // TODO: 调用登录API
-    // const response = await login(loginForm)
-    // localStorage.setItem('token', response.token)
-    
-    // 模拟登录成功
-    localStorage.setItem('token', 'mock-token')
-    ElMessage.success('登录成功')
-    
-    // 如果有重定向地址，则跳转到该地址
-    const redirect = route.query.redirect || '/'
-    router.push(redirect)
-  } catch (error) {
-    ElMessage.error(error.message || '登录失败')
-  } finally {
-    loading.value = false
-  }
+  if (!loginFormRef.value) return;
+  await loginFormRef.value.validate(async (valid) => {
+    if (valid) {
+      loading.value = true;
+      const success = await userStore.login(loginData);
+      loading.value = false;
+      if (success) {
+        const redirect = route.query.redirect || '/';
+        router.push(redirect);
+      }
+    } else {
+      console.log('表单验证失败');
+      return false;
+    }
+  })
 }
 
 const goToRegister = () => {

@@ -1,76 +1,71 @@
+import request from '@/utils/request';
+
 // 模拟登录
 export const login = async (loginData) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        data: {
-          token: 'mock_token',
-          userInfo: {
-            id: 1,
-            username: loginData.username,
-            avatar: '/images/avatars/avatar1.jpg',
-            email: 'user@example.com',
-            phone: '13800138000'
-          }
-        }
-      })
-    }, 1000)
-  })
+  return request(
+    {
+      url: 'users/login/',
+      method: 'POST',
+      data: loginData
+    }
+  )
+
 }
 
 // 模拟注册
 export const register = async (registerData) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        data: {
-          message: '注册成功'
-        }
-      })
-    }, 1000)
-  })
+  return request(
+    {
+      url: 'users/users/',
+      method: 'POST',
+      data: registerData
+    }
+  )
+  
 }
 
-// 模拟退出登录
 export const logout = async () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        data: {
-          message: '退出成功'
-        }
-      })
-    }, 1000)
+  return Promise.resolve({
+    data: {
+      message: '退出成功'
+    }
   })
+  
 }
 
-// 模拟获取用户信息
 export const getUserInfo = async () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        data: {
-          id: 1,
-          username: '测试用户',
-          avatar: '/images/avatars/avatar1.jpg',
-          email: 'user@example.com',
-          phone: '13800138000'
-        }
-      })
-    }, 1000)
-  })
+  return request(
+    {
+      url: `users/users/${userId}`,
+      method: 'GET'
+    }
+  )
+  
 }
 
-// 模拟更新用户信息
 export const updateUserInfo = async (userInfo) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        data: {
-          ...userInfo,
-          message: '更新成功'
-        }
-      })
-    }, 1000)
+  return request(
+    {
+      url: `users/users/${userId}`,
+      method: 'PATCH',
+      data: userInfo
+    }
+  )
+
+}
+
+export const changePassword = async (passwordData) => {
+  return request(
+    {
+      url: 'users/users/set_password',
+      method: 'POST',
+      data: passwordData
+    }
+  )
+}
+
+export const getMe = () => {
+  return request({
+    url: 'users/users/me/',
   })
-} 
+}

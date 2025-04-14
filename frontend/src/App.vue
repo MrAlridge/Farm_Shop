@@ -32,7 +32,9 @@ const toggleDarkMode = () => {
           <nav-bar @toggle-dark-mode="toggleDarkMode" />
         </el-header>
         <el-main>
-          <router-view />
+          <router-view v-slot="{Component, route}">
+            <component :is="Component" :key="route.fullPath" />
+          </router-view>
         </el-main>
         <el-footer>
           <nav-footer />

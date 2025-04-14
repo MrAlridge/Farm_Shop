@@ -1,18 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/store/modules/user'
-import { usePoorStore } from '@/store/modules/poor'
+// 不再需要单独导入 poorStore 进行认证检查
+// import { usePoorStore } from '@/store/modules/poor'
 
-// 路由懒加载
-const Home = () => import('../views/Home.vue')
-const Login = () => import('../views/Login.vue')
-const Register = () => import('../views/Register.vue')
-const Products = () => import('../views/Products.vue')
-const ProductDetail = () => import('../views/ProductDetail.vue')
-const Cart = () => import('../views/Cart.vue')
-const Orders = () => import('../views/Orders.vue')
-const UserCenter = () => import('../views/UserCenter.vue')
-const PovertyInfo = () => import('../views/PovertyInfo.vue')
-
+// --- 路由定义 ---
 const routes = [
   {
     path: '/',
@@ -20,24 +11,25 @@ const routes = [
     component: () => import('@/views/Home.vue'),
     meta: {
       title: '首页'
+      // 允许所有用户访问，无需特殊 meta
     }
   },
   {
-    path: '/login',
+    path: '/login', // 统一登录入口
     name: 'Login',
-    component: () => import('@/views/Login.vue'),
+    component: () => import('@/views/Login.vue'), // 使用统一的登录组件
     meta: {
       title: '登录',
-      requiresGuest: true
+      requiresGuest: true // 只允许未登录用户访问
     }
   },
   {
-    path: '/register',
+    path: '/register', // 统一注册入口
     name: 'Register',
-    component: () => import('@/views/Register.vue'),
+    component: () => import('@/views/Register.vue'), // 使用统一的注册组件
     meta: {
       title: '注册',
-      requiresGuest: true
+      requiresGuest: true // 只允许未登录用户访问
     }
   },
   {
@@ -46,6 +38,7 @@ const routes = [
     component: () => import('@/views/Products.vue'),
     meta: {
       title: '商品列表'
+      // 允许所有用户访问
     }
   },
   {
@@ -54,6 +47,7 @@ const routes = [
     component: () => import('@/views/ProductDetail.vue'),
     meta: {
       title: '商品详情'
+      // 允许所有用户访问
     }
   },
   {
@@ -62,7 +56,8 @@ const routes = [
     component: () => import('@/views/Cart.vue'),
     meta: {
       title: '购物车',
-      requiresAuth: true
+      requiresAuth: true // 需要登录才能访问
+      // allowedUserTypes: ['social'] // 示例：如果只有社会用户能访问购物车
     }
   },
   {
@@ -71,134 +66,192 @@ const routes = [
     component: () => import('@/views/Orders.vue'),
     meta: {
       title: '我的订单',
-      requiresAuth: true
+      requiresAuth: true // 需要登录
+      // allowedUserTypes: ['social'] // 示例：如果只有社会用户能看订单
     }
   },
   {
     path: '/user',
-    name: 'UserCenter',
-    component: () => import('@/views/UserCenter.vue'),
+    name: 'UserCenterLayout', // 建议给布局路由一个清晰的名字
+    component: () => import('@/views/UserCenter.vue'), // 用户中心布局
+    redirect: { name: 'UserProfile' }, // 默认重定向到个人资料页
     meta: {
       title: '个人中心',
-      requiresAuth: true
+      requiresAuth: true // 需要登录
     },
     children: [
       {
         path: 'profile',
         name: 'UserProfile',
-        component: () => import('@/views/user/Profile.vue')
+        component: () => import('@/views/user/Profile.vue'),
+        meta: { title: '个人资料' }
       },
       {
         path: 'address',
         name: 'UserAddress',
-        component: () => import('@/views/user/Address.vue')
+        component: () => import('@/views/user/Address.vue'),
+        meta: { title: '收货地址'/*, allowedUserTypes: ['social']*/ } // 示例：如果只有社会用户有地址
       },
       {
         path: 'security',
         name: 'UserSecurity',
-        component: () => import('@/views/user/Security.vue')
+        component: () => import('@/views/user/Security.vue'),
+        meta: { title: '安全设置' }
       }
     ]
   },
   {
     path: '/poverty-info',
     name: 'PovertyInfo',
-    component: PovertyInfo,
+    component: () => import('@/views/PovertyInfo.vue'), // 修正了 component 引用
     meta: {
       title: '扶贫信息'
+      // 公开页面，无需登录
     }
   },
   {
     path: '/search',
     name: 'Search',
-    component: () => import('@/views/Search.vue')
+    component: () => import('@/views/Search.vue'),
+    meta: {
+        title: '搜索结果'
+    }
   },
+  // --- 贫困户专属功能区 ---
   {
     path: '/poor',
     name: 'PoorLayout',
-    component: () => import('@/views/poor/Layout.vue'),
-    meta: { requiresPoorAuth: true },
+    component: () => import('@/views/poor/Layout.vue'), // 贫困户功能区布局
+    redirect: { name: 'PoorDashboard' }, // 默认重定向到仪表盘
+    meta: {
+        requiresAuth: true, // 需要登录
+        allowedUserTypes: ['poor'] // *** 关键：只允许 'poor' 类型的用户访问 ***
+    },
     children: [
-      {
-        path: 'login',
-        name: 'PoorLogin',
-        component: () => import('@/views/poor/Login.vue')
-      },
-      {
-        path: 'register',
-        name: 'PoorRegister',
-        component: () => import('@/views/poor/Register.vue')
-      },
+      // 移除了 poor/login 和 poor/register
       {
         path: 'dashboard',
         name: 'PoorDashboard',
-        component: () => import('@/views/poor/Dashboard.vue')
+        component: () => import('@/views/poor/Dashboard.vue'),
+        meta: { title: '扶贫工作台' }
       },
       {
         path: 'policies',
         name: 'PoorPolicies',
-        component: () => import('@/views/poor/Policies.vue')
+        component: () => import('@/views/poor/Policies.vue'),
+        meta: { title: '扶贫政策' }
       },
       {
         path: 'cases',
         name: 'PoorCases',
-        component: () => import('@/views/poor/Cases.vue')
+        component: () => import('@/views/poor/Cases.vue'),
+        meta: { title: '扶贫案例' }
       },
       {
         path: 'applications',
         name: 'PoorApplications',
-        component: () => import('@/views/poor/Applications.vue')
+        component: () => import('@/views/poor/Applications.vue'),
+        meta: { title: '我的申请' }
       },
       {
         path: 'notifications',
         name: 'PoorNotifications',
-        component: () => import('@/views/poor/Notifications.vue')
+        component: () => import('@/views/poor/Notifications.vue'),
+        meta: { title: '通知消息' }
       }
+      // ... 其他贫困户专属页面
     ]
   },
+  // --- 404 Not Found ---
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
-    component: () => import('../views/NotFound.vue')
+    component: () => import('../views/NotFound.vue'),
+    meta: {
+        title: '页面未找到'
+    }
   }
 ]
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes
+  routes,
+  scrollBehavior(to, from, savedPosition) {
+    // 路由切换时滚动到顶部
+    if (savedPosition) {
+      return savedPosition
+    } else {
+      return { top: 0 }
+    }
+  }
 })
 
-// 全局前置守卫
-router.beforeEach((to, from, next) => {
-  const userStore = useUserStore()
-  const poorStore = usePoorStore()
+// --- 全局前置守卫 ---
+router.beforeEach(async (to, from, next) => {
+  const userStore = useUserStore();
+
+  // 尝试在每次路由切换前获取用户信息（如果 token 存在但 userInfo 不存在）
+  // 这有助于处理页面刷新后状态丢失的情况
+  if (userStore.token && !userStore.userId) {
+      console.log("Guard: Token exists but user info missing, attempting to fetch...");
+      await userStore.fetchUserInfo(); // 等待用户信息获取完成
+  }
+
+  const isLoggedIn = userStore.isLoggedIn;
+  const userType = userStore.userType;
+
+  console.log(`Navigating to: ${to.path}`);
+  console.log(`Route Meta:`, to.meta);
+  console.log(`User LoggedIn: ${isLoggedIn}, UserType: ${userType}`);
 
   // 设置页面标题
-  document.title = to.meta.title || '扶贫助农平台'
+  document.title = to.meta.title ? `${to.meta.title} - 扶贫助农平台` : '扶贫助农平台';
 
-  // 需要普通用户认证的路由
-  if (to.meta.requiresAuth && !userStore.isLoggedIn) {
-    next({ name: 'Login' })
-    return
+  // --- 权限检查逻辑 ---
+
+  // 1. 检查是否是只允许 Guest 访问的页面 (如 Login, Register)
+  if (to.meta.requiresGuest) {
+    if (isLoggedIn) {
+      console.log(`Guard: User logged in, redirecting from guest page ${to.path}`);
+      // 根据用户类型重定向到不同的首页
+      const redirectTarget = userType === 'poor' ? { name: 'PoorDashboard' } : { name: 'Home' };
+      next(redirectTarget);
+      return; // 阻止后续检查
+    } else {
+      // 未登录，允许访问 Guest 页面
+      next();
+      return;
+    }
   }
 
-  // 需要贫困户认证的路由
-  if (to.meta.requiresPoorAuth && !poorStore.isLoggedIn) {
-    next({ name: 'PoorLogin' })
-    return
+  // 2. 检查是否需要登录认证
+  if (to.meta.requiresAuth) {
+    if (!isLoggedIn) {
+       console.log(`Guard: Auth required for ${to.path}, redirecting to Login`);
+       next({ name: 'Login', query: { redirect: to.fullPath } }); // 保存原始目标路径以便登录后跳转回来
+       return; // 阻止后续检查
+    }
+    // --- 如果已登录，进行用户类型检查 ---
+    if (to.meta.allowedUserTypes && Array.isArray(to.meta.allowedUserTypes)) {
+       if (!to.meta.allowedUserTypes.includes(userType)) {
+           console.log(`Guard: User type (${userType}) not allowed for ${to.path}. Allowed: ${to.meta.allowedUserTypes}. Redirecting.`);
+           // 用户类型不匹配，可以重定向到首页或无权限页面
+           ElMessage.warning('您没有权限访问此页面'); // 提示用户
+           next({ name: 'Home' }); // 重定向到首页
+           return; // 阻止后续检查
+       }
+       // 用户类型匹配，继续
+    }
+    // --- 如果不需要特定用户类型，或者类型匹配，则允许访问 ---
+    console.log(`Guard: Access granted to ${to.path} for user type ${userType}`);
+    next();
+    return;
   }
 
-  // 需要登录但未登录
-  if (to.meta.requiresAuth && !localStorage.getItem('token')) {
-    next({ name: 'Login', query: { redirect: to.fullPath } })
-  }
-  // 需要未登录但已登录
-  else if (to.meta.requiresGuest && localStorage.getItem('token')) {
-    next({ name: 'Home' })
-  }
-  else {
-    next()
-  }
-})
+  // --- 如果路由既不需要登录也不限制 Guest ---
+  // (例如公共页面 Home, Products, PovertyInfo)
+  console.log(`Guard: Public route ${to.path}, access granted.`);
+  next();
+});
 
-export default router 
+export default router

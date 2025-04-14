@@ -6,7 +6,7 @@
       </template>
       
       <el-form
-        ref="registerForm"
+        ref="registerFormRef"
         :model="registerForm"
         :rules="rules"
         label-width="80px"
@@ -67,8 +67,10 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Lock, Phone } from '@element-plus/icons-vue'
+import { useUserStore } from '@/store/modules/user'
 
 const router = useRouter()
+const userStore = useUserStore()
 const registerForm = reactive({
   username: '',
   password: '',
@@ -77,26 +79,15 @@ const registerForm = reactive({
 })
 
 const loading = ref(false)
+const registerFormRef = ref(null)
 
 const validatePass = (rule, value, callback) => {
   if (value === '') {
     callback(new Error('请输入密码'))
   } else {
     if (registerForm.confirmPassword !== '') {
-      if (registerForm.password !== registerForm.confirmPassword) {
-        callback(new Error('两次输入密码不一致'))
-      }
+      registerFormRef.value?.validateField('confirmPassword', () => null)
     }
-    callback()
-  }
-}
-
-const validatePass2 = (rule, value, callback) => {
-  if (value === '') {
-    callback(new Error('请再次输入密码'))
-  } else if (value !== registerForm.password) {
-    callback(new Error('两次输入密码不一致'))
-  } else {
     callback()
   }
 }
@@ -107,11 +98,20 @@ const rules = {
     { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
   ],
   password: [
-    { required: true, validator: validatePass, trigger: 'blur' },
+    { required: true, trigger: 'blur' },
     { min: 6, max: 20, message: '长度在 6 到 20 个字符', trigger: 'blur' }
   ],
   confirmPassword: [
-    { required: true, validator: validatePass2, trigger: 'blur' }
+    { required: true,  trigger: 'blur' },
+    { validator: (rule, value, callback) => {
+      if (value === '') {
+        callback(new Error('请输入密码'));
+      } else if (value !== registerForm.password) {
+        callback(new Error('两次输入密码不一致'));
+      } else {
+        callback();
+      }
+    }, trigger: 'blur' }
   ],
   phone: [
     { required: true, message: '请输入手机号', trigger: 'blur' },
@@ -120,17 +120,39 @@ const rules = {
 }
 
 const handleRegister = async () => {
+  const formInstance = registerFormRef.value;
+  if (!formInstance) return;
+
   try {
-    loading.value = true
-    // TODO: 调用注册API
-    // await register(registerForm)
+    await formInstance.validate();
+  } catch(error) {
+    console.log('表单验证失败:', error);
+    ElMessage.error('请检查输入项');
+    return;
+  }
+
+  loading.value = true;
+  try {
+    const payload = {
+      username: registerForm.username,
+      password: registerForm.password,
+      phone: registerForm.phone
+    }
+
+    const success = await userStore.register(payload);
     
-    ElMessage.success('注册成功')
-    router.push('/login')
-  } catch (error) {
-    ElMessage.error(error.message || '注册失败')
+    if (success) {
+      ElMessage.success('注册成功!即将跳转到登录页面...');
+      setTimeout(() => {
+        router.push('/login');
+      }, 1500);
+    } else {
+      ElMessage.error('注册失败,请稍后再试');
+    }
+  } catch(error) {
+    console.error('注册失败,组件是:', error);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
