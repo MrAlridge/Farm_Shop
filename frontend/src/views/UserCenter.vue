@@ -26,7 +26,7 @@
             </el-menu-item>
             <el-menu-item index="security">
               <el-icon><Lock /></el-icon>
-              <span>账户安全</span>
+              <span>修改密码</span>
             </el-menu-item>
             <el-menu-item index="orders">
               <el-icon><List /></el-icon>
@@ -233,6 +233,56 @@
             description="暂无待审核的申请"
           />
         </el-card>
+
+        <!-- 收货地址 -->
+        <el-card v-if="activeMenu === 'address'" class="content-card">
+          <template #header>
+            <div class="card-header">
+              <span>收货地址</span>
+              <el-button type="primary" @click="addAddress">添加地址</el-button>
+            </div>
+          </template>
+          
+          <el-table :data="addresses" style="width: 100%">
+            <el-table-column prop="name" label="收货人" width="120" />
+            <el-table-column prop="phone" label="联系电话" width="150" />
+            <el-table-column prop="address" label="详细地址" />
+            <el-table-column label="操作" width="150">
+              <template #default="{ row }">
+                <el-button type="primary" size="small" @click="editAddress(row)">编辑</el-button>
+                <el-button type="danger" size="small" @click="deleteAddress(row)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-card>
+
+        <!-- 修改密码 -->
+        <el-card v-if="activeMenu === 'security'" class="content-card">
+          <template #header>
+            <div class="card-header">
+              <span>修改密码</span>
+            </div>
+          </template>
+          
+          <el-form
+            ref="passwordFormRef"
+            :model="passwordForm"
+            :rules="passwordRules"
+            label-width="100px">
+            <el-form-item label="原密码" prop="oldPassword">
+              <el-input v-model="passwordForm.oldPassword" type="password" />
+            </el-form-item>
+            <el-form-item label="新密码" prop="newPassword">
+              <el-input v-model="passwordForm.newPassword" type="password" />
+            </el-form-item>
+            <el-form-item label="确认密码" prop="confirmPassword">
+              <el-input v-model="passwordForm.confirmPassword" type="password" />
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="changePassword">修改密码</el-button>
+            </el-form-item>
+          </el-form>
+        </el-card>
       </el-col>
     </el-row>
 
@@ -383,6 +433,74 @@ const pagination = ref({
   pageSize: 10,
   total: 0
 })
+
+// 地址相关
+const addresses = ref([])
+const addAddress = () => {
+  // 添加地址的逻辑
+  ElMessage.info('添加地址功能待实现')
+}
+
+const editAddress = (address) => {
+  // 编辑地址的逻辑
+  ElMessage.info('编辑地址功能待实现')
+}
+
+const deleteAddress = (address) => {
+  // 删除地址的逻辑
+  ElMessage.info('删除地址功能待实现')
+}
+
+// 密码相关
+const passwordFormRef = ref(null)
+const passwordForm = ref({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+
+const passwordRules = {
+  oldPassword: [
+    { required: true, message: '请输入原密码', trigger: 'blur' }
+  ],
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, message: '密码长度不能小于6位', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, message: '请确认新密码', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value !== passwordForm.value.newPassword) {
+          callback(new Error('两次输入的密码不一致'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ]
+}
+
+const changePassword = async () => {
+  if (!passwordFormRef.value) return
+  
+  await passwordFormRef.value.validate(async (valid) => {
+    if (valid) {
+      try {
+        // 这里应该调用修改密码的API
+        ElMessage.success('密码修改成功')
+        passwordForm.value = {
+          oldPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        }
+      } catch (error) {
+        ElMessage.error('密码修改失败')
+      }
+    }
+  })
+}
 
 // 方法
 const handleMenuSelect = (index) => {

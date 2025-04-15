@@ -97,6 +97,62 @@ const goToRegister = () => {
 
 <style scoped>
 .login-container {
+  position: relative;
+  height: 100vh;
+  width: 50vw;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  
+  /* 添加伪元素作为背景 */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('/images/bg.webp'); /* 调整图片路径 */
+    background-size:cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    /* filter: blur(1px); */
+    z-index: 0;
+  }
+}
+
+.login-card {
+  width: 450px;
+  z-index: 1; /* 确保卡片在背景上方 */
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  
+  /* 标题样式 */
+  h2 {
+    text-align: center;
+    color: #303133;
+  }
+}
+
+.login-form {
+  margin: 20px;
+  
+  /* 按钮容器样式 */
+  .el-form-item:last-child {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 480px) {
+  .login-card {
+    width: 90%;
+    margin: 0 20px;
+  }
+}
+/* .login-container {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -110,11 +166,11 @@ const goToRegister = () => {
 
 .login-form {
   margin-top: 20px;
-}
+} */
 
-h2 {
+/* h2 {
   text-align: center;
   margin: 0;
   color: #303133;
-}
+} */
 </style> 

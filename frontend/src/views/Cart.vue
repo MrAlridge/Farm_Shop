@@ -82,16 +82,16 @@ const cartItems = ref([
   {
     id: 1,
     name: '有机大米',
-    price: 39.9,
-    image: '/product1.jpg',
+    price: 24.9,
+    image: '/public/images/products/rice.jpg',
     quantity: 2,
     stock: 100
   },
   {
     id: 2,
     name: '土鸡蛋',
-    price: 29.9,
-    image: '/product2.jpg',
+    price: 44.5,
+    image: '/public/images/products/egg.jpg',
     quantity: 1,
     stock: 50
   }
