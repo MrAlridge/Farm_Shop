@@ -70,14 +70,31 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getCart, updateCart, checkoutCart } from '@/api/cart'
 
 const router = useRouter()
 
-const cartItems = ref([])
+// 模拟购物车数据
+const cartItems = ref([
+  {
+    id: 1,
+    name: '有机大米',
+    price: 39.9,
+    image: '/product1.jpg',
+    quantity: 2,
+    stock: 100
+  },
+  {
+    id: 2,
+    name: '土鸡蛋',
+    price: 29.9,
+    image: '/product2.jpg',
+    quantity: 1,
+    stock: 50
+  }
+])
 
 const selectedItems = ref([])
 
@@ -92,14 +109,9 @@ const handleSelectionChange = (selection) => {
   selectedItems.value = selection
 }
 
-const updateQuantity = async (item) => {
-  try {
-    await updateCart(item.id, { quantity: item.quantity })
-    ElMessage.success('数量更新成功')
-  } catch (error) {
-    console.error('更新数量失败:', error)
-    ElMessage.error('更新数量失败')
-  }
+const updateQuantity = (item) => {
+  // TODO: 更新购物车商品数量
+  console.log('更新数量:', item)
 }
 
 const removeItem = (item) => {
@@ -135,25 +147,10 @@ const clearCart = () => {
   })
 }
 
-const checkout = async () => {
-  try {
-    await checkoutCart(selectedItems.value)
-    ElMessage.success('结算成功')
-    router.push('/orders/checkout')
-  } catch (error) {
-    console.error('结算失败:', error)
-    ElMessage.error('结算失败')
-  }
+const checkout = () => {
+  // TODO: 实现结算逻辑
+  router.push('/orders/checkout')
 }
-
-onMounted(async () => {
-  try {
-    const response = await getCart()
-    cartItems.value = response.data
-  } catch (error) {
-    console.error('获取购物车失败:', error)
-  }
-})
 </script>
 
 <style scoped>

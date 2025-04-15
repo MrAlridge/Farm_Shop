@@ -53,4 +53,15 @@ export const clearCart = async () => {
     console.error('清空购物车失败:', error)
     throw error
   }
+}
+
+// 结算购物车
+export const checkoutCart = async (items) => {
+  try {
+    const response = await request.post('cart/checkout', { items })
+    return response
+  } catch (error) {
+    console.error('结算购物车失败:', error)
+    throw error
+  }
 } 
