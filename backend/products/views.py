@@ -2,8 +2,8 @@ from rest_framework import viewsets, filters
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Product
-from .serializers import ProductSerializer
+from .models import Product, Category
+from .serializers import ProductSerializer, CategorySerializer
 from .filters import ProductFilter  # 需要自定义的过滤器
 
 class ProductViewSet(viewsets.ModelViewSet):
@@ -45,4 +45,11 @@ class ProductViewSet(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(products, many=True)
+        return Response(serializer.data)
+
+class CategoryViewSet(viewsets.ViewSet):
+    @action(detail=False, methods=['get'])
+    def list_categories(self, request):
+        categories = Category.objects.all()
+        serializer = CategorySerializer(categories, many=True)
         return Response(serializer.data)

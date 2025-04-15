@@ -79,8 +79,9 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { getProducts, getCategories } from '@/api/products'
 
 const router = useRouter()
 
@@ -93,80 +94,53 @@ const filterForm = reactive({
 })
 
 // 分类选项
-const categories = [
-  { value: 'vegetables', label: '蔬菜' },
-  { value: 'fruits', label: '水果' },
-  { value: 'grains', label: '粮食' },
-  { value: 'meat', label: '肉类' },
-  { value: 'others', label: '其他' }
-]
+const categories = ref([])
 
 // 分页相关
 const currentPage = ref(1)
 const pageSize = ref(12)
 const total = ref(100)
 
-// 模拟商品数据
-const products = ref([
-  {
-    id: 1,
-    name: '有机大米',
-    price: 39.9,
-    image: '/images/products/product1.jpg',
-    description: '产自山区，天然无污染',
-    sales: 1000,
-    stock: 500
-  },
-  {
-    id: 2,
-    name: '土鸡蛋',
-    price: 15.8,
-    image: '/images/products/product2.jpg',
-    description: '散养土鸡，营养丰富',
-    sales: 800,
-    stock: 300
-  },
-  {
-    id: 3,
-    name: '农家蜂蜜',
-    price: 68.0,
-    image: '/images/products/product3.jpg',
-    description: '纯天然蜂蜜，口感醇厚',
-    sales: 500,
-    stock: 200
-  },
-  {
-    id: 4,
-    name: '山核桃',
-    price: 45.0,
-    image: '/images/products/product4.jpg',
-    description: '野生山核桃，营养丰富',
-    sales: 300,
-    stock: 100
-  },
-  {
-    id: 5,
-    name: '农家腊肉',
-    price: 88.0,
-    image: '/images/products/product5.jpg',
-    description: '传统工艺，风味独特',
-    sales: 200,
-    stock: 50
-  },
-  {
-    id: 6,
-    name: '野生菌菇',
-    price: 128.0,
-    image: '/images/products/product6.jpg',
-    description: '深山采摘，天然美味',
-    sales: 100,
-    stock: 30
-  }
-])
+const products = ref([])
 
-const handleFilter = () => {
-  // TODO: 实现筛选逻辑
-  console.log('筛选条件:', filterForm)
+onMounted(async () => {
+  try {
+    const response = await getProducts()
+    if (response && response.results) {
+      products.value = response.results
+      total.value = response.count
+    } else {
+      console.error('API响应格式不正确:', response)
+    }
+  } catch (error) {
+    console.error('获取商品列表失败:', error)
+  }
+
+  try {
+    const categoryResponse = await getCategories()
+    categories.value = categoryResponse.map(cat => ({ value: cat.id, label: cat.name }))
+  } catch (error) {
+    console.error('获取商品分类失败:', error)
+  }
+})
+
+const handleFilter = async () => {
+  try {
+    const response = await getProducts({
+      min_price: filterForm.minPrice,
+      max_price: filterForm.maxPrice,
+      category: filterForm.category,
+      sort_by: filterForm.sortBy
+    })
+    if (response && response.results) {
+      products.value = response.results
+      total.value = response.count
+    } else {
+      console.error('API响应格式不正确:', response)
+    }
+  } catch (error) {
+    console.error('筛选商品失败:', error)
+  }
 }
 
 const resetFilter = () => {
