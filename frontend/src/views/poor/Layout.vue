@@ -2,7 +2,6 @@
   <div class="poor-layout">
     <el-container>
       <el-header>
-        <nav-bar />
       </el-header>
       <el-container>
         <el-aside width="200px">
@@ -44,7 +43,6 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import NavBar from '@/components/NavBar.vue'
 import {
   HomeFilled,
   Document,
