@@ -1,6 +1,7 @@
 <template>
   <div class="cart-container">
-    <el-card>
+    <div class="background-element"></div>
+    <el-card class="cart-card">
       <template #header>
         <div class="card-header">
           <span>我的购物车</span>
@@ -155,7 +156,29 @@ const checkout = () => {
 
 <style scoped>
 .cart-container {
-  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  position: relative;
+  background-color: #f5f5f5;
+}
+
+.background-element {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 50%;
+  height: 100%;
+  background-color: #e0e0e0;
+  z-index: -1;
+}
+
+.cart-card {
+  width: 80%;
+  max-width: 800px;
+  margin: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .card-header {

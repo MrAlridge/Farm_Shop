@@ -74,12 +74,19 @@ const toggleDarkMode = () => {
   background-color: var(--background-color);
   color: var(--text-color);
   transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .el-container {
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 20px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  background-color: white;
+  border-radius: 8px;
 }
 
 .el-header {
@@ -108,6 +115,9 @@ const toggleDarkMode = () => {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
 /* 为路由视图添加顶部边距，避免被导航栏遮挡 */
@@ -115,6 +125,7 @@ const toggleDarkMode = () => {
   margin-top: 60px;
   min-height: calc(100vh - 60px);
   padding: 20px;
+  width: 100%;
 }
 
 /* 当显示侧边栏时，调整主内容区域的左边距 */
