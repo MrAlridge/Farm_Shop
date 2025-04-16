@@ -30,6 +30,14 @@
             </template>
           </el-input>
         </el-form-item>
+
+        <el-form-item label="身份" prop="role">
+          <el-radio-group v-model="loginData.role">
+            <el-radio label="user">普通用户</el-radio>
+            <el-radio label="poor">贫困户</el-radio>
+            <el-radio label="social">帮扶单位</el-radio>
+          </el-radio-group>
+        </el-form-item>
         
         <el-form-item>
           <el-button type="primary" @click="handleLogin" :loading="loading">
@@ -56,7 +64,8 @@ const loginFormRef = ref(null)
 
 const loginData = reactive({
   username: '',
-  password: ''
+  password: '',
+  role: 'user' // 默认选择普通用户
 })
 
 const loading = ref(false)
@@ -69,6 +78,9 @@ const rules = {
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, max: 20, message: '长度在 6 到 20 个字符', trigger: 'blur' }
+  ],
+  role: [
+    { required: true, message: '请选择身份', trigger: 'change' }
   ]
 }
 
@@ -143,6 +155,12 @@ const goToRegister = () => {
     justify-content: space-between;
     margin-top: 30px;
   }
+
+  /* 单选框组样式 */
+  .el-radio-group {
+    display: flex;
+    gap: 20px;
+  }
 }
 
 /* 响应式设计 */
@@ -152,25 +170,5 @@ const goToRegister = () => {
     margin: 0 20px;
   }
 }
-/* .login-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background-color: #f5f7fa;
-}
 
-.login-card {
-  width: 400px;
-}
-
-.login-form {
-  margin-top: 20px;
-} */
-
-/* h2 {
-  text-align: center;
-  margin: 0;
-  color: #303133;
-} */
 </style> 
