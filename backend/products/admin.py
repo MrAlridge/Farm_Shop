@@ -7,6 +7,10 @@ class CategoryAdmin(admin.ModelAdmin):
     search_fields = ('name',)
     ordering = ('name',)
 
+    class Meta:
+        verbose_name = '商品分类'
+        verbose_name_plural = '商品分类管理'
+
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('name', 'category', 'price', 'stock', 'sales', 'added_by', 'created_at')
@@ -33,3 +37,7 @@ class ProductAdmin(admin.ModelAdmin):
         if not change:  # 如果是新建商品
             obj.added_by = request.user
         super().save_model(request, obj, form, change)
+
+    class Meta:
+        verbose_name = '商品'
+        verbose_name_plural = '商品管理'

@@ -23,11 +23,19 @@ class UserAdmin(BaseUserAdmin):
         }),
     )
 
+    class Meta:
+        verbose_name = '用户'
+        verbose_name_plural = '用户管理'
+
 @admin.register(SocialSupport)
 class SocialSupportAdmin(admin.ModelAdmin):
     list_display = ('user', 'company_name', 'contact_person')
     search_fields = ('company_name', 'contact_person', 'user__username')
     list_filter = ('user__is_active',)
+
+    class Meta:
+        verbose_name = '社会帮扶单位'
+        verbose_name_plural = '社会帮扶单位管理'
 
 @admin.register(PoorApplication)
 class PoorApplicationAdmin(admin.ModelAdmin):
@@ -47,3 +55,7 @@ class PoorApplicationAdmin(admin.ModelAdmin):
             'fields': ('supporting_documents',)
         }),
     )
+
+    class Meta:
+        verbose_name = '贫困户申请'
+        verbose_name_plural = '贫困户申请管理'

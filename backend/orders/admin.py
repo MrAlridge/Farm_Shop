@@ -29,6 +29,12 @@ class OrderAdmin(admin.ModelAdmin):
             pass
         super().save_model(request, obj, form, change)
 
+    class Meta:
+        verbose_name = '订单'
+        verbose_name_plural = '订单管理'
+
 @admin.register(OrderItem)
 class OrderItemAdmin(admin.ModelAdmin):
-    pass
+    class Meta:
+        verbose_name = '订单项'
+        verbose_name_plural = '订单项管理'

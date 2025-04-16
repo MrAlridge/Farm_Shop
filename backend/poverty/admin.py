@@ -32,6 +32,10 @@ class PovertyApplicationAdmin(admin.ModelAdmin):
             obj.reviewed_at = timezone.now()
         super().save_model(request, obj, form, change)
 
+    class Meta:
+        verbose_name = '扶贫申请'
+        verbose_name_plural = '扶贫申请管理'
+
 @admin.register(AssistanceRecord)
 class AssistanceRecordAdmin(admin.ModelAdmin):
     list_display = ('application', 'supporter', 'assistance_type', 'assistance_date')
@@ -47,3 +51,7 @@ class AssistanceRecordAdmin(admin.ModelAdmin):
             'fields': ('details', 'assistance_date')
         }),
     )
+
+    class Meta:
+        verbose_name = '援助记录'
+        verbose_name_plural = '援助记录管理'
