@@ -1,7 +1,7 @@
 <template>
   <div class="home">
     <el-carousel :interval="4000" type="card" height="400px">
-      <el-carousel-item v-for="item in banners" :key="item.id">
+      <el-carousel-item v-for="item in banners" :key="item.id" @click="viewBlog(item.id)">
         <img :src="item.image" :alt="item.title" class="banner-image">
       </el-carousel-item>
     </el-carousel>
@@ -45,9 +45,9 @@ const router = useRouter()
 
 // 模拟数据
 const banners = ref([
-  { id: 1, image: '/public/images/banner1.png', title: '扶贫助农' },
-  { id: 2, image: '/public/images/banner2.jpeg', title: '优质农产品' },
-  { id: 3, image: '/public/images/banner3.jpeg', title: '乡村振兴' }
+  { id: 1, image: '/public/images/banner1.jpg', title: '扶贫助农', blogId: 1 },
+  { id: 2, image: '/public/images/banner2.jpg', title: '优质农产品', blogId: 2 },
+  { id: 3, image: '/public/images/banner3.jpg', title: '乡村振兴', blogId: 3 }
 ])
 
 const featuredProducts = ref([
@@ -65,6 +65,10 @@ const povertyNews = ref([
 
 const viewProduct = (id) => {
   router.push(`/product/${id}`)
+}
+
+const viewBlog = (id) => {
+  router.push(`/blog/${id}`)
 }
 </script>
 

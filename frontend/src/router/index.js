@@ -117,6 +117,14 @@ const routes = [
         title: '搜索结果'
     }
   },
+  {
+    path: '/blog/:id',
+    name: 'BlogDetail',
+    component: () => import('@/views/BlogDetail.vue'),
+    meta: {
+      title: '博客详情'
+    }
+  },
   // --- 贫困户专属功能区 ---
   {
     path: '/poor',
@@ -158,9 +166,33 @@ const routes = [
         name: 'PoorNotifications',
         component: () => import('@/views/poor/Notifications.vue'),
         meta: { title: '通知消息' }
+      },
+      {
+        path: 'product/publish',
+        name: 'PoorProductPublish',
+        component: () => import('@/views/poor/ProductPublish.vue'),
+        meta: { title: '发布农产品' }
       }
       // ... 其他贫困户专属页面
     ]
+  },
+  {
+    path: '/poor/project/submit',
+    name: 'ProjectSubmit',
+    component: () => import('@/views/social/ProjectSubmit.vue'),
+    meta: {
+      title: '提交项目信息',
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/poor/project/publish',
+    name: 'ProjectPublish',
+    component: () => import('@/views/social/ProjectPublish.vue'),
+    meta: {
+      title: '发布帮扶项目',
+      requiresAuth: true
+    }
   },
   // --- 404 Not Found ---
   {

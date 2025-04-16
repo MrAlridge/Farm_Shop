@@ -4,26 +4,23 @@
       <!-- 商品图片展示区 -->
       <el-col :span="12">
         <el-card class="image-card">
-          <div v-if="!product.images.length" class="no-image">
+          <div v-if="!product.main_image" class="no-image">
             <el-empty description="暂无图片" />
           </div>
-          <el-carousel v-else :interval="4000" type="card" height="400px">
-            <el-carousel-item v-for="(image, index) in product.images" :key="index">
-              <el-image 
-                :src="image" 
-                fit="contain"
-                :preview-src-list="product.images"
-                :initial-index="index"
-              >
-                <template #error>
-                  <div class="image-error">
-                    <el-icon><picture-filled /></el-icon>
-                    <span>图片加载失败</span>
-                  </div>
-                </template>
-              </el-image>
-            </el-carousel-item>
-          </el-carousel>
+          <div v-else class="image-container">
+            <el-image 
+              :src="product.main_image" 
+              fit="contain"
+              :preview-src-list="[product.main_image]"
+            >
+              <template #error>
+                <div class="image-error">
+                  <el-icon><picture-filled /></el-icon>
+                  <span>图片加载失败</span>
+                </div>
+              </template>
+            </el-image>
+          </div>
         </el-card>
       </el-col>
 
@@ -34,54 +31,66 @@
             <el-skeleton :rows="6" animated />
           </div>
           <template v-else>
-            <h1 class="product-name">{{ product.name }}</h1>
-            <div class="product-price">
-              <span class="price-label">价格：</span>
-              <span class="price-value">¥{{ product.price }}</span>
-            </div>
-            
-            <div class="product-stock">
-              <span class="stock-label">库存：</span>
-              <span class="stock-value">{{ product.stock }}</span>
+            <div class="product-header">
+              <h1 class="product-name">{{ product.name }}</h1>
+              <div class="product-meta">
+                <el-tag size="small" type="info">{{ getCategoryName(product.category) }}</el-tag>
+                <el-tag size="small" type="success" v-if="product.added_by?.user_type === 'poor'">帮扶农户</el-tag>
+              </div>
             </div>
 
-            <div class="product-sales">
-              <span class="sales-label">销量：</span>
-              <span class="sales-value">{{ product.sales }}</span>
+            <div class="product-price-section">
+              <div class="price-main">
+                <span class="price-symbol">¥</span>
+                <span class="price-value">{{ product.price }}</span>
+              </div>
+              <div class="price-info">
+                <span class="stock-info">库存: {{ product.stock }}</span>
+                <span class="sales-info">销量: {{ product.sales }}</span>
+              </div>
             </div>
 
-            <div class="product-category">
-              <span class="category-label">分类：</span>
-              <span class="category-value">{{ getCategoryName(product.category) }}</span>
-            </div>
+            <el-divider />
 
             <div class="product-description">
               <h3>商品描述</h3>
               <p>{{ product.description }}</p>
             </div>
 
-            <div class="product-seller">
+            <!-- <div class="product-seller">
               <h3>卖家信息</h3>
-              <p>卖家：{{ product.added_by?.username || '未知' }}</p>
-              <p v-if="product.added_by?.user_type === 'poor'" class="poor-seller-tag">帮扶农户</p>
-            </div>
+              <div class="seller-info">
+                <el-avatar :size="40" :src="product.added_by?.avatar" />
+                <div class="seller-details">
+                  <p class="seller-name">{{ product.added_by?.username || '未知' }}</p>
+                  <p class="seller-type" v-if="product.added_by?.user_type === 'poor'">帮扶农户</p>
+                </div>
+              </div>
+            </div> -->
 
-            <div class="purchase-actions">
-              <el-input-number 
-                v-model="quantity" 
-                :min="1" 
-                :max="Math.max(1, product.stock)"
-                size="large"
-                :disabled="!product.stock"
-              />
-              <el-button 
-                type="primary" 
-                size="large" 
-                :disabled="!product.stock"
-                @click="addToCart"
-              >
-                加入购物车
-              </el-button>
+            <el-divider />
+
+            <div class="purchase-section">
+              <div class="quantity-selector">
+                <span class="quantity-label">购买数量：</span>
+                <el-input-number 
+                  v-model="quantity" 
+                  :min="1" 
+                  :max="Math.max(1, product.stock)"
+                  size="large"
+                  :disabled="!product.stock"
+                />
+              </div>
+              <div class="purchase-actions">
+                <el-button 
+                  type="primary" 
+                  size="large" 
+                  :disabled="!product.stock"
+                  @click="addToCart"
+                >
+                  加入购物车
+                </el-button>
+              </div>
             </div>
           </template>
         </el-card>
@@ -291,66 +300,51 @@ onMounted(() => {
   min-height: 400px;
 }
 
-.product-name {
-  font-size: 24px;
+.product-header {
   margin-bottom: 20px;
 }
 
-.product-price {
-  margin-bottom: 15px;
+.product-name {
+  font-size: 24px;
+  margin-bottom: 10px;
+  color: #303133;
 }
 
-.price-label {
-  font-size: 16px;
-  color: #666;
+.product-meta {
+  display: flex;
+  gap: 10px;
+}
+
+.product-price-section {
+  margin: 20px 0;
+  padding: 20px;
+  background-color: #fafafa;
+  border-radius: 8px;
+}
+
+.price-main {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+
+.price-symbol {
+  font-size: 20px;
+  color: #f56c6c;
+  margin-right: 4px;
 }
 
 .price-value {
-  font-size: 28px;
+  font-size: 36px;
   color: #f56c6c;
   font-weight: bold;
 }
 
-.product-stock {
-  margin-bottom: 20px;
-}
-
-.stock-label {
-  font-size: 16px;
-  color: #666;
-}
-
-.stock-value {
-  font-size: 16px;
-  color: #333;
-}
-
-.product-sales {
-  margin-bottom: 20px;
-}
-
-.sales-label {
-  font-size: 16px;
-  color: #666;
-}
-
-.sales-value {
-  font-size: 16px;
-  color: #333;
-}
-
-.product-category {
-  margin-bottom: 20px;
-}
-
-.category-label {
-  font-size: 16px;
-  color: #666;
-}
-
-.category-value {
-  font-size: 16px;
-  color: #333;
+.price-info {
+  display: flex;
+  gap: 20px;
+  color: #909399;
+  font-size: 14px;
 }
 
 .product-description {
@@ -359,26 +353,63 @@ onMounted(() => {
 
 .product-description h3 {
   font-size: 18px;
+  color: #303133;
   margin-bottom: 10px;
 }
 
 .product-seller {
+  margin: 20px 0;
+}
+
+.seller-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  background-color: #fafafa;
+  border-radius: 8px;
+}
+
+.seller-details {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.seller-name {
+  font-weight: bold;
+  color: #303133;
+}
+
+.seller-type {
+  color: #67c23a;
+  font-size: 14px;
+}
+
+.purchase-section {
+  margin-top: 30px;
+}
+
+.quantity-selector {
+  display: flex;
+  align-items: center;
+  gap: 15px;
   margin-bottom: 20px;
 }
 
-.poor-seller-tag {
-  background-color: #f56c6c;
-  color: #fff;
-  padding: 5px 10px;
-  border-radius: 5px;
-  font-size: 12px;
+.quantity-label {
+  color: #606266;
 }
 
 .purchase-actions {
-  margin-top: 30px;
   display: flex;
-  gap: 20px;
-  align-items: center;
+  justify-content: center;
+}
+
+.purchase-actions .el-button {
+  width: 100%;
+  height: 50px;
+  font-size: 16px;
 }
 
 .reviews-section {
@@ -417,20 +448,21 @@ onMounted(() => {
   line-height: 1.6;
 }
 
-:deep(.el-carousel__item) {
+.image-container {
+  width: 100%;
+  height: 400px;
   display: flex;
   justify-content: center;
   align-items: center;
   background-color: #f5f7fa;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-:deep(.el-image) {
+.image-container :deep(.el-image) {
   width: 100%;
   height: 100%;
-}
-
-.loading-state {
-  padding: 20px;
+  object-fit: contain;
 }
 
 .no-image {
@@ -438,6 +470,8 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   align-items: center;
+  background-color: #f5f7fa;
+  border-radius: 8px;
 }
 
 .image-error {
@@ -452,5 +486,9 @@ onMounted(() => {
 .image-error .el-icon {
   font-size: 48px;
   margin-bottom: 10px;
+}
+
+.loading-state {
+  padding: 20px;
 }
 </style> 

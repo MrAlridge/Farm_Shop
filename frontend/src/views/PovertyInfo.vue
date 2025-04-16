@@ -90,6 +90,8 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
+
 // 模拟扶贫动态数据
 const povertyNews = ref([
   {

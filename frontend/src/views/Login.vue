@@ -125,7 +125,7 @@ const goToRegister = () => {
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: url('/images/bg.webp'); /* 调整图片路径 */
+    background-image: url('/images/bg.jpg'); /* 调整图片路径 */
     background-size:cover;
     background-position: center;
     background-repeat: no-repeat;
