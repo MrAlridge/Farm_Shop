@@ -18,13 +18,13 @@
         <el-table-column type="selection" width="55" />
         <el-table-column label="商品图片" width="120">
           <template #default="{ row }">
-            <img :src="row.image" class="product-image">
+            <img :src="row.product.image || '/default-product.png'" class="product-image">
           </template>
         </el-table-column>
-        <el-table-column label="商品名称" prop="name" />
+        <el-table-column label="商品名称" prop="product.name" />
         <el-table-column label="单价" width="120">
           <template #default="{ row }">
-            ¥{{ row.price }}
+            ¥{{ row.product.price }}
           </template>
         </el-table-column>
         <el-table-column label="数量" width="150">
@@ -32,14 +32,14 @@
             <el-input-number
               v-model="row.quantity"
               :min="1"
-              :max="row.stock"
+              :max="row.product.stock"
               size="small"
-              @change="updateQuantity(row)" />
+              @change="(value) => updateQuantity(row, value)" />
           </template>
         </el-table-column>
         <el-table-column label="小计" width="120">
           <template #default="{ row }">
-            ¥{{ (row.price * row.quantity).toFixed(2) }}
+            ¥{{ (row.product.price * row.quantity).toFixed(2) }}
           </template>
         </el-table-column>
         <el-table-column label="操作" width="120">
@@ -67,91 +67,237 @@
         </el-button>
       </div>
     </el-card>
+
+    <!-- 结算表单对话框 -->
+    <el-dialog
+      v-model="checkoutDialogVisible"
+      title="填写订单信息"
+      width="500px"
+    >
+      <el-form
+        :model="checkoutForm"
+        :rules="checkoutRules"
+        ref="checkoutFormRef"
+        label-width="100px"
+      >
+        <el-form-item label="收货人" prop="receiver_name">
+          <el-input v-model="checkoutForm.receiver_name" placeholder="请输入收货人姓名" />
+        </el-form-item>
+        
+        <el-form-item label="联系电话" prop="contact_phone">
+          <el-input v-model="checkoutForm.contact_phone" placeholder="请输入联系电话" />
+        </el-form-item>
+        
+        <el-form-item label="收货地址" prop="shipping_address">
+          <el-input
+            v-model="checkoutForm.shipping_address"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入详细收货地址"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="checkoutDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitCheckout">
+            提交订单
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getCartItems, updateCartItem, removeCartItem, clearCart, createOrder } from '@/api/cart'
 
 const router = useRouter()
-
-// 模拟购物车数据
-const cartItems = ref([
-  {
-    id: 1,
-    name: '有机大米',
-    price: 24.9,
-    image: '/public/images/products/rice.jpg',
-    quantity: 2,
-    stock: 100
-  },
-  {
-    id: 2,
-    name: '土鸡蛋',
-    price: 44.5,
-    image: '/public/images/products/egg.jpg',
-    quantity: 1,
-    stock: 50
-  }
-])
-
+const cartItems = ref([])
 const selectedItems = ref([])
+const checkoutDialogVisible = ref(false)
+const checkoutFormRef = ref(null)
+
+const checkoutForm = ref({
+  receiver_name: '',
+  contact_phone: '',
+  shipping_address: ''
+})
+
+const checkoutRules = {
+  receiver_name: [
+    { required: true, message: '请输入收货人姓名', trigger: 'blur' }
+  ],
+  contact_phone: [
+    { required: true, message: '请输入联系电话', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' }
+  ],
+  shipping_address: [
+    { required: true, message: '请输入收货地址', trigger: 'blur' },
+    { min: 5, message: '地址不能少于5个字符', trigger: 'blur' }
+  ]
+}
 
 // 计算总价
 const totalPrice = computed(() => {
   return selectedItems.value.reduce((total, item) => {
-    return total + item.price * item.quantity
+    return total + item.product.price * item.quantity
   }, 0)
 })
+
+// 获取购物车数据
+const fetchCartItems = async () => {
+  try {
+    const response = await getCartItems()
+    cartItems.value = response.data
+  } catch (error) {
+    console.error('获取购物车数据失败:', error)
+    ElMessage.error('获取购物车数据失败')
+  }
+}
 
 const handleSelectionChange = (selection) => {
   selectedItems.value = selection
 }
 
-const updateQuantity = (item) => {
-  // TODO: 更新购物车商品数量
-  console.log('更新数量:', item)
+// 更新商品数量
+const updateQuantity = async (item, newQuantity) => {
+  try {
+    await updateCartItem(item.id, newQuantity)
+    ElMessage.success('更新成功')
+  } catch (error) {
+    console.error('更新数量失败:', error)
+    ElMessage.error('更新数量失败')
+    // 恢复原来的数量
+    item.quantity = item.quantity
+  }
 }
 
-const removeItem = (item) => {
-  ElMessageBox.confirm(
-    '确定要从购物车中删除该商品吗？',
-    '提示',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
+// 删除商品
+const removeItem = async (item) => {
+  try {
+    await ElMessageBox.confirm(
+      '确定要从购物车中删除该商品吗？',
+      '提示',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    await removeCartItem(item.id)
+    ElMessage.success('删除成功')
+    await fetchCartItems()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除失败:', error)
+      ElMessage.error('删除失败')
     }
-  ).then(() => {
-    const index = cartItems.value.findIndex(i => i.id === item.id)
-    if (index !== -1) {
-      cartItems.value.splice(index, 1)
-      ElMessage.success('删除成功')
-    }
-  })
+  }
 }
 
-const clearCart = () => {
-  ElMessageBox.confirm(
-    '确定要清空购物车吗？',
-    '提示',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  ).then(() => {
+// 清空购物车
+const clearCartItems = async () => {
+  try {
+    await ElMessageBox.confirm(
+      '确定要清空购物车吗？',
+      '提示',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    await clearCart()
     cartItems.value = []
+    selectedItems.value = []
     ElMessage.success('购物车已清空')
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('清空购物车失败:', error)
+      ElMessage.error('清空购物车失败')
+    }
+  }
+}
+
+// 显示结算对话框
+const showCheckoutDialog = () => {
+  if (selectedItems.value.length === 0) {
+    ElMessage.warning('请选择要购买的商品')
+    return
+  }
+  checkoutDialogVisible.value = true
+}
+
+// 提交订单
+const submitCheckout = async () => {
+  if (!checkoutFormRef.value) return
+  
+  await checkoutFormRef.value.validate(async (valid) => {
+    if (valid) {
+      try {
+        // 准备订单数据
+        const orderData = {
+          items: selectedItems.value.map(item => ({
+            product_id: item.product.id,
+            quantity: item.quantity
+          })),
+          shipping_address: checkoutForm.value.shipping_address,
+          contact_phone: checkoutForm.value.contact_phone,
+          receiver_name: checkoutForm.value.receiver_name
+        }
+        
+        // 创建订单
+        const response = await createOrder(orderData)
+        
+        if (response && response.id) {
+          // 清空已结算的商品
+          cartItems.value = cartItems.value.filter(item => 
+            !selectedItems.value.some(selected => selected.id === item.id)
+          )
+          selectedItems.value = []
+          
+          // 重置表单
+          checkoutForm.value = {
+            receiver_name: '',
+            contact_phone: '',
+            shipping_address: ''
+          }
+          checkoutDialogVisible.value = false
+          
+          ElMessage.success({
+            message: '订单创建成功，正在跳转到首页...',
+            duration: 2000
+          })
+          
+          // 延迟2秒后跳转到首页
+          setTimeout(() => {
+            router.push('/')
+          }, 2000)
+        } else {
+          throw new Error('订单创建失败：响应数据格式错误')
+        }
+      } catch (error) {
+        console.error('创建订单失败:', error)
+        ElMessage.error('创建订单失败：' + (error.message || '未知错误'))
+      }
+    }
   })
 }
 
+// 结算按钮点击事件
 const checkout = () => {
-  // TODO: 实现结算逻辑
-  router.push('/orders/checkout')
+  showCheckoutDialog()
 }
+
+onMounted(() => {
+  fetchCartItems()
+})
 </script>
 
 <style scoped>

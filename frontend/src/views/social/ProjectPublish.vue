@@ -19,7 +19,7 @@
             <el-input v-model="projectForm.name" placeholder="请输入项目名称" />
           </el-form-item>
           
-          <el-form-item label="项目类型" prop="type">
+          <!-- <el-form-item label="项目类型" prop="type">
             <el-select v-model="projectForm.type" placeholder="请选择项目类型">
               <el-option label="技术培训" value="training" />
               <el-option label="资金支持" value="financial" />
@@ -27,8 +27,9 @@
               <el-option label="就业帮扶" value="employment" />
               <el-option label="其他" value="other" />
             </el-select>
-          </el-form-item>
+          </el-form-item> -->
 
+          <!-- 隐藏图片上传功能
           <el-form-item label="项目图片" prop="image">
             <el-upload
               class="project-uploader"
@@ -41,6 +42,7 @@
             </el-upload>
             <div class="upload-tip">建议尺寸：800x600px，支持 jpg、png 格式</div>
           </el-form-item>
+          -->
         </div>
 
         <!-- 项目详情 -->
@@ -64,23 +66,23 @@
             />
           </el-form-item>
 
-          <el-form-item label="帮扶对象" prop="targetBeneficiaries">
+          <!-- <el-form-item label="帮扶对象" prop="targetBeneficiaries">
             <el-input
               v-model="projectForm.targetBeneficiaries"
               type="textarea"
               :rows="3"
               placeholder="请描述帮扶对象的要求，如：年龄、地区、技能等"
             />
-          </el-form-item>
+          </el-form-item> -->
 
-          <el-form-item label="预期目标" prop="expectedGoals">
+          <!-- <el-form-item label="预期目标" prop="expectedGoals">
             <el-input
               v-model="projectForm.expectedGoals"
               type="textarea"
               :rows="3"
               placeholder="请描述项目的预期目标"
             />
-          </el-form-item>
+          </el-form-item> -->
         </div>
 
         <!-- 时间安排 -->
@@ -126,7 +128,7 @@
         <!-- 提交按钮 -->
         <div class="form-actions">
           <el-button @click="resetForm">重置</el-button>
-          <el-button type="primary" @click="submitForm">发布项目</el-button>
+          <el-button type="primary" @click="submitForm" :loading="submitting">发布项目</el-button>
         </div>
       </el-form>
     </el-card>
@@ -134,11 +136,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { createProject } from '@/api/project'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const formRef = ref(null)
+const submitting = ref(false)
 
 // 表单数据
 const projectForm = ref({
@@ -164,9 +169,6 @@ const rules = {
   ],
   type: [
     { required: true, message: '请选择项目类型', trigger: 'change' }
-  ],
-  image: [
-    { required: true, message: '请上传项目图片', trigger: 'change' }
   ],
   description: [
     { required: true, message: '请输入项目简介', trigger: 'blur' }
@@ -199,38 +201,6 @@ const rules = {
   ]
 }
 
-// 图片上传前的验证
-const beforeImageUpload = (file) => {
-  const isImage = file.type.startsWith('image/')
-  const isLt2M = file.size / 1024 / 1024 < 2
-
-  if (!isImage) {
-    ElMessage.error('只能上传图片文件!')
-    return false
-  }
-  if (!isLt2M) {
-    ElMessage.error('图片大小不能超过 2MB!')
-    return false
-  }
-  return true
-}
-
-// 上传图片
-const uploadImage = async (options) => {
-  try {
-    // TODO: 实现图片上传到服务器的逻辑
-    // 这里模拟上传成功
-    const reader = new FileReader()
-    reader.readAsDataURL(options.file)
-    reader.onload = () => {
-      projectForm.value.image = reader.result
-    }
-    ElMessage.success('图片上传成功')
-  } catch (error) {
-    ElMessage.error('图片上传失败')
-  }
-}
-
 // 重置表单
 const resetForm = () => {
   if (formRef.value) {
@@ -242,11 +212,45 @@ const resetForm = () => {
 const submitForm = async () => {
   if (!formRef.value) return
   
-  await formRef.value.validate((valid) => {
+  await formRef.value.validate(async (valid) => {
     if (valid) {
-      // TODO: 实现提交项目信息的逻辑
-      ElMessage.success('项目发布成功')
-      resetForm()
+      submitting.value = true
+      try {
+        // 准备提交的数据
+        const [startDate, endDate] = projectForm.value.dateRange || []
+        const projectData = {
+          name: projectForm.value.name,
+          // 图片字段可以为空
+          image: projectForm.value.image || null,
+          description: projectForm.value.description,
+          content: projectForm.value.content,
+          start_date: startDate ? startDate.toISOString().split('T')[0] : null,
+          end_date: endDate ? endDate.toISOString().split('T')[0] : null,
+          deadline: projectForm.value.deadline ? projectForm.value.deadline.toISOString().split('T')[0] : null,
+          contact_person: projectForm.value.contactPerson,
+          contact_phone: projectForm.value.contactPhone,
+          contact_email: projectForm.value.contactEmail
+        }
+        
+        // 调用API创建项目
+        const response = await createProject(projectData)
+        
+        ElMessage.success('项目发布成功')
+        
+        // 发布成功后跳转到项目详情页
+        // response 已经是 data 对象，直接使用 response.id
+        if (response && response.id) {
+          router.push(`/social/project-detail/${response.id}`)
+        } else {
+          // 如果没有id，跳转到项目列表页
+          router.push('/social/project-manage')
+        }
+      } catch (error) {
+        console.error('项目发布失败:', error)
+        ElMessage.error('项目发布失败: ' + (error.response?.data?.detail || '未知错误'))
+      } finally {
+        submitting.value = false
+      }
     }
   })
 }
@@ -283,40 +287,6 @@ const submitForm = async () => {
   margin: 0 0 20px 0;
   font-size: 18px;
   color: #303133;
-}
-
-.project-uploader {
-  border: 1px dashed #d9d9d9;
-  border-radius: 6px;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  width: 300px;
-  height: 200px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.project-uploader:hover {
-  border-color: #409eff;
-}
-
-.uploader-icon {
-  font-size: 28px;
-  color: #8c939d;
-}
-
-.project-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.upload-tip {
-  font-size: 12px;
-  color: #909399;
-  margin-top: 8px;
 }
 
 .form-actions {

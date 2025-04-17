@@ -1,122 +1,85 @@
 <template>
   <div class="product-publish">
-    <el-card class="page-header">
-      <h2>发布农产品</h2>
-    </el-card>
-
-    <el-card class="publish-form">
+    <el-card class="form-card">
+      <template #header>
+        <div class="card-header">
+          <h2>发布商品</h2>
+        </div>
+      </template>
+      
       <el-form
         ref="formRef"
-        :model="productForm"
+        :model="form"
         :rules="rules"
-        label-width="120px"
-        class="product-form"
+        label-width="100px"
+        class="publish-form"
       >
-        <!-- 基本信息 -->
-        <div class="form-section">
-          <h3>基本信息</h3>
-          <el-form-item label="商品名称" prop="name">
-            <el-input v-model="productForm.name" placeholder="请输入商品名称" />
-          </el-form-item>
-          
-          <el-form-item label="商品分类" prop="category">
-            <el-select v-model="productForm.category" placeholder="请选择商品分类">
-              <el-option
-                v-for="item in categories"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id"
-              />
-            </el-select>
-          </el-form-item>
-
-          <el-form-item label="商品图片" prop="image">
-            <el-upload
-              class="product-uploader"
-              :show-file-list="false"
-              :before-upload="beforeImageUpload"
-              :http-request="uploadImage"
-            >
-              <img v-if="productForm.image" :src="productForm.image" class="product-image" />
-              <el-icon v-else class="uploader-icon"><Plus /></el-icon>
-            </el-upload>
-            <div class="upload-tip">建议尺寸：800x800px，支持 jpg、png 格式</div>
-          </el-form-item>
-        </div>
-
-        <!-- 价格和库存 -->
-        <div class="form-section">
-          <h3>价格和库存</h3>
-          <el-form-item label="商品价格" prop="price">
-            <el-input-number
-              v-model="productForm.price"
-              :precision="2"
-              :step="0.1"
-              :min="0"
-              placeholder="请输入商品价格"
+        <el-form-item label="商品名称" prop="name">
+          <el-input v-model="form.name" placeholder="请输入商品名称" />
+        </el-form-item>
+        
+        <el-form-item label="商品分类" prop="category_id">
+          <el-select v-model="form.category_id" placeholder="请选择商品分类">
+            <el-option
+              v-for="category in categories"
+              :key="category.id"
+              :label="category.name"
+              :value="category.id"
             />
-            <span class="unit">元</span>
-          </el-form-item>
-
-          <el-form-item label="商品库存" prop="stock">
-            <el-input-number
-              v-model="productForm.stock"
-              :min="0"
-              :step="1"
-              placeholder="请输入商品库存"
-            />
-            <span class="unit">件</span>
-          </el-form-item>
-
-          <el-form-item label="计量单位" prop="unit">
-            <el-input v-model="productForm.unit" placeholder="请输入计量单位，如：斤、个、箱等" />
-          </el-form-item>
-        </div>
-
-        <!-- 商品描述 -->
-        <div class="form-section">
-          <h3>商品描述</h3>
-          <!-- <el-form-item label="商品简介" prop="description">
-            <el-input
-              v-model="productForm.description"
-              type="textarea"
-              :rows="4"
-              placeholder="请输入商品简介"
-            />
-          </el-form-item> -->
-
-          <el-form-item label="商品简介" prop="details">
-            <el-input
-              v-model="productForm.details"
-              type="textarea"
-              :rows="6"
-              placeholder="请输入商品详细信息，如：产地、规格、保质期等"
-            />
-          </el-form-item>
-        </div>
-
-        <!-- 发货信息 -->
-        <!-- <div class="form-section">
-          <h3>发货信息</h3>
-          <el-form-item label="发货地址" prop="address">
-            <el-input v-model="productForm.address" placeholder="请输入发货地址" />
-          </el-form-item>
-
-          <el-form-item label="发货时间" prop="shippingTime">
-            <el-select v-model="productForm.shippingTime" placeholder="请选择发货时间">
-              <el-option label="24小时内" value="24h" />
-              <el-option label="48小时内" value="48h" />
-              <el-option label="72小时内" value="72h" />
-              <el-option label="7天内" value="7d" />
-            </el-select>
-          </el-form-item>
-        </div> -->
-
-        <!-- 提交按钮 -->
-        <div class="form-actions">
-          <el-button @click="resetForm">重置</el-button>
+          </el-select>
+        </el-form-item>
+        
+        <!-- 暂时隐藏图片上传功能
+        <el-form-item label="商品图片" prop="image">
+          <el-upload
+            class="image-uploader"
+            :show-file-list="false"
+            :before-upload="beforeImageUpload"
+            :http-request="handleImageUpload"
+          >
+            <img v-if="form.image" :src="form.image" class="image" />
+            <el-icon v-else class="image-uploader-icon"><Plus /></el-icon>
+          </el-upload>
+          <div class="image-tip">支持 jpg、png 格式，大小不超过 2MB</div>
+        </el-form-item>
+        -->
+        
+        <el-form-item label="商品价格" prop="price">
+          <el-input-number
+            v-model="form.price"
+            :precision="2"
+            :step="0.1"
+            :min="0"
+            placeholder="请输入商品价格"
+          />
+        </el-form-item>
+        
+        <el-form-item label="库存数量" prop="stock">
+          <el-input-number
+            v-model="form.stock"
+            :min="0"
+            :step="1"
+            placeholder="请输入库存数量"
+          />
+        </el-form-item>
+        
+        <el-form-item label="计量单位" prop="unit">
+          <el-input v-model="form.unit" placeholder="请输入计量单位，如：个、斤、件" />
+        </el-form-item>
+        
+        <el-form-item label="商品描述" prop="description">
+          <el-input
+            v-model="form.description"
+            type="textarea"
+            :rows="4"
+            placeholder="请输入商品描述"
+          />
+        </el-form-item>
+        
+        <el-form-item>
           <el-button type="primary" @click="submitForm">发布商品</el-button>
-        </div>
+          <el-button @click="resetForm">重置</el-button>
+        </el-form-item>
       </el-form>
     </el-card>
   </div>
@@ -126,97 +89,163 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
+import { createProduct, uploadProductImage, getCategories } from '@/api/product'
 
 const formRef = ref(null)
+const categories = ref([])
 
-// 商品分类数据
-const categories = ref([
-  { id: 1, name: '新鲜水果' },
-  { id: 2, name: '时令蔬菜' },
-  { id: 3, name: '粮油调味' },
-  { id: 4, name: '农家特产' },
-  { id: 5, name: '禽蛋肉类' }
-])
-
-// 表单数据
-const productForm = ref({
+const form = ref({
   name: '',
-  category: '',
+  category_id: '',
   image: '',
   price: 0,
   stock: 0,
   unit: '',
-  description: '',
-  details: '',
-  address: '',
-  shippingTime: ''
+  description: ''
 })
 
-// 表单验证规则
 const rules = {
   name: [
     { required: true, message: '请输入商品名称', trigger: 'blur' },
     { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
   ],
-  category: [
+  category_id: [
     { required: true, message: '请选择商品分类', trigger: 'change' }
   ],
-  image: [
-    { required: true, message: '请上传商品图片', trigger: 'change' }
-  ],
   price: [
-    { required: true, message: '请输入商品价格', trigger: 'blur' }
+    { required: true, message: '请输入商品价格', trigger: 'blur' },
+    { type: 'number', min: 0, message: '价格必须大于 0', trigger: 'blur' }
   ],
   stock: [
-    { required: true, message: '请输入商品库存', trigger: 'blur' }
+    { required: true, message: '请输入库存数量', trigger: 'blur' },
+    { type: 'number', min: 0, message: '库存必须大于等于 0', trigger: 'blur' }
   ],
   unit: [
     { required: true, message: '请输入计量单位', trigger: 'blur' }
   ],
   description: [
-    { required: true, message: '请输入商品简介', trigger: 'blur' }
-  ],
-  details: [
-    { required: true, message: '请输入商品详情', trigger: 'blur' }
-  ],
-  address: [
-    { required: true, message: '请输入发货地址', trigger: 'blur' }
-  ],
-  shippingTime: [
-    { required: true, message: '请选择发货时间', trigger: 'change' }
+    { required: true, message: '请输入商品描述', trigger: 'blur' },
+    { min: 10, max: 500, message: '长度在 10 到 500 个字符', trigger: 'blur' }
   ]
+}
+
+// 获取商品分类列表
+const fetchCategories = async () => {
+  try {
+    const response = await getCategories()
+    console.log('原始分类响应:', response) // 调试日志
+    
+    // 处理不同的响应格式
+    if (Array.isArray(response)) {
+      // 如果响应直接是数组
+      categories.value = response
+    } else if (response && typeof response === 'object') {
+      if (Array.isArray(response.data)) {
+        // 如果响应是 { data: [...] } 格式
+        categories.value = response.data
+      } else if (Array.isArray(response.results)) {
+        // 如果响应是分页格式 { results: [...] }
+        categories.value = response.results
+      } else {
+        // 尝试将对象的 values 转换为数组
+        const values = Object.values(response)
+        if (values.length > 0 && values.every(item => item && typeof item === 'object')) {
+          categories.value = values
+        } else {
+          throw new Error('无法解析分类数据格式')
+        }
+      }
+    } else {
+      throw new Error('分类数据格式不正确')
+    }
+    
+    // 确保分类数据包含必要的字段
+    categories.value = categories.value.map(category => ({
+      id: category.id || category.pk || category.value,
+      name: category.name || category.label || '未命名分类'
+    }))
+    
+    console.log('处理后的分类数据:', categories.value) // 调试日志
+  } catch (error) {
+    console.error('获取商品分类失败:', error)
+    ElMessage.error('获取商品分类失败，使用默认分类')
+    
+    // 使用默认分类作为备选
+    categories.value = [
+      { id: 1, name: '其他' },
+      { id: 2, name: '蔬菜' },
+      { id: 3, name: '水果' },
+      { id: 4, name: '肉蛋奶' },
+      { id: 5, name: '粮食' }
+    ]
+  }
 }
 
 // 图片上传前的验证
 const beforeImageUpload = (file) => {
-  const isImage = file.type.startsWith('image/')
+  const isImage = file.type === 'image/jpeg' || file.type === 'image/png'
   const isLt2M = file.size / 1024 / 1024 < 2
 
   if (!isImage) {
-    ElMessage.error('只能上传图片文件!')
+    ElMessage.error('只能上传 JPG 或 PNG 格式的图片！')
     return false
   }
   if (!isLt2M) {
-    ElMessage.error('图片大小不能超过 2MB!')
+    ElMessage.error('图片大小不能超过 2MB！')
     return false
   }
   return true
 }
 
-// 上传图片
-const uploadImage = async (options) => {
+// 自定义上传方法
+const handleImageUpload = async (options) => {
   try {
-    // TODO: 实现图片上传到服务器的逻辑
-    // 这里模拟上传成功
-    const reader = new FileReader()
-    reader.readAsDataURL(options.file)
-    reader.onload = () => {
-      productForm.value.image = reader.result
+    const response = await uploadProductImage(options.file)
+    console.log('上传响应:', response) // 调试日志
+    
+    if (response && response.url) {
+      form.value.image = response.url
+      ElMessage.success(response.message || '图片上传成功')
+    } else {
+      throw new Error('响应格式不正确')
     }
-    ElMessage.success('图片上传成功')
   } catch (error) {
-    ElMessage.error('图片上传失败')
+    console.error('图片上传失败:', error)
+    ElMessage.error('图片上传失败：' + (error.message || '未知错误'))
   }
+}
+
+// 提交表单
+const submitForm = async () => {
+  if (!formRef.value) return
+  
+  await formRef.value.validate(async (valid) => {
+    if (valid) {
+      try {
+        // 准备提交的数据
+        const submitData = {
+          name: form.value.name,
+          category: form.value.category_id,
+          price: form.value.price,
+          stock: form.value.stock,
+          unit: form.value.unit,
+          description: form.value.description
+        }
+        
+        const response = await createProduct(submitData)
+        if (response) {
+          ElMessage.success('商品发布成功')
+          // 重置表单
+          resetForm()
+        } else {
+          throw new Error('响应格式不正确')
+        }
+      } catch (error) {
+        console.error('商品发布失败:', error)
+        ElMessage.error('商品发布失败：' + (error.message || '未知错误'))
+      }
+    }
+  })
 }
 
 // 重置表单
@@ -226,21 +255,8 @@ const resetForm = () => {
   }
 }
 
-// 提交表单
-const submitForm = async () => {
-  if (!formRef.value) return
-  
-  await formRef.value.validate((valid) => {
-    if (valid) {
-      // TODO: 实现提交商品信息的逻辑
-      ElMessage.success('商品发布成功')
-      resetForm()
-    }
-  })
-}
-
 onMounted(() => {
-  // TODO: 获取商品分类列表
+  fetchCategories()
 })
 </script>
 
@@ -249,85 +265,60 @@ onMounted(() => {
   padding: 20px;
 }
 
-.page-header {
-  margin-bottom: 20px;
+.form-card {
+  max-width: 800px;
+  margin: 0 auto;
 }
 
-.page-header h2 {
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-header h2 {
   margin: 0;
-}
-
-.publish-form {
-  margin-bottom: 20px;
-}
-
-.form-section {
-  margin-bottom: 30px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #ebeef5;
-}
-
-.form-section:last-child {
-  border-bottom: none;
-}
-
-.form-section h3 {
-  margin: 0 0 20px 0;
-  font-size: 18px;
+  font-size: 20px;
   color: #303133;
 }
 
-.product-uploader {
+.publish-form {
+  margin-top: 20px;
+}
+
+.image-uploader {
   border: 1px dashed #d9d9d9;
   border-radius: 6px;
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  width: 200px;
-  height: 200px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  width: 178px;
+  height: 178px;
 }
 
-.product-uploader:hover {
-  border-color: #409eff;
+.image-uploader:hover {
+  border-color: #409EFF;
 }
 
-.uploader-icon {
+.image-uploader-icon {
   font-size: 28px;
   color: #8c939d;
+  width: 178px;
+  height: 178px;
+  text-align: center;
+  line-height: 178px;
 }
 
-.product-image {
-  width: 100%;
-  height: 100%;
+.image {
+  width: 178px;
+  height: 178px;
+  display: block;
   object-fit: cover;
 }
 
-.upload-tip {
+.image-tip {
   font-size: 12px;
   color: #909399;
-  margin-top: 8px;
-}
-
-.unit {
-  margin-left: 10px;
-  color: #606266;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin-top: 40px;
-}
-
-:deep(.el-input-number) {
-  width: 200px;
-}
-
-:deep(.el-textarea__inner) {
-  font-family: inherit;
+  margin-top: 5px;
 }
 </style> 

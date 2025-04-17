@@ -1,127 +1,92 @@
 // src/utils/request.js
 import axios from 'axios';
-import { useUserStore } from '@/store/modules/user'; // Or your primary user store
-// import { usePoorStore } from '@/store/modules/poor'; // If poor users have separate tokens
 import { ElMessage } from 'element-plus';
-import router from '@/router'; // Import router for redirection
+import router from '@/router';
+import { useUserStore } from '@/store/modules/user';
 
+// 创建 axios 实例
 const service = axios.create({
-  baseURL: 'http://127.0.0.1:8000/api/', // Your Django backend API base URL
-  timeout: 10000, // Request timeout
+  baseURL: 'http://localhost:8000/api',
+  timeout: 15000,
+  headers: {
+    'Content-Type': 'application/json',
+  }
 });
 
-// 是否正在刷新token
-let isRefreshing = false;
-// 等待刷新token的请求队列
-let requests = [];
-
-// Request interceptor
+// 请求拦截器
 service.interceptors.request.use(
-  (config) => {
+  config => {
     const userStore = useUserStore();
-    // const poorStore = usePoorStore(); // Adjust if using a single token
-
-    // Determine which token to use (adapt this logic if you have a unified auth)
     const token = userStore.token;
-
+    
     if (token) {
-      // Standard JWT approach
       config.headers['Authorization'] = `Bearer ${token}`;
-      // If using Django's default TokenAuthentication
-      // config.headers['Authorization'] = `Token ${token}`;
     }
     return config;
   },
-  (error) => {
-    console.error('Request Error:', error); // for debug
+  error => {
+    console.error('请求错误:', error);
     return Promise.reject(error);
   }
 );
 
-// Response interceptor
+// 响应拦截器
 service.interceptors.response.use(
-  (response) => {
-    // Directly return data if successful
-    return response.data; // DRF typically wraps responses, often we just want the data
+  response => {
+    return response.data;
   },
-  async (error) => {
+  async error => {
     const userStore = useUserStore();
     
     if (error.response) {
-      const { status } = error.response;
-      const originalRequest = error.config;
-
-      // token 失效的情况
-      if (status === 401 && error.response.data.code === 'token_not_valid') {
-        if (!isRefreshing) {
-          isRefreshing = true;
-          try {
-            // 尝试刷新token
-            const refreshSuccess = await userStore.refreshAccessToken();
-            isRefreshing = false;
-
-            if (refreshSuccess) {
-              // 重新发送队列中的请求
-              requests.forEach(cb => cb());
-              requests = [];
-              
-              // 重试当前请求
-              originalRequest.headers['Authorization'] = `Bearer ${userStore.token}`;
-              return service(originalRequest);
-            } else {
-              // 刷新失败，清空队列
-              requests.forEach(cb => cb(new Error('Token refresh failed')));
-              requests = [];
-              
-              // 跳转到登录页
-              router.push('/login');
-              return Promise.reject(new Error('请重新登录'));
-            }
-          } catch (refreshError) {
-            isRefreshing = false;
-            // 刷新token失败，执行登出
+      switch (error.response.status) {
+        case 401:
+          // 如果是刷新token的请求失败，直接登出
+          if (error.config.url.includes('/token/refresh/')) {
             await userStore.logout();
             router.push('/login');
-            return Promise.reject(refreshError);
+            return Promise.reject(error);
           }
-        } else {
-          // 正在刷新token，将请求加入队列
-          return new Promise((resolve, reject) => {
-            requests.push((error) => {
-              if (error) {
-                reject(error);
-              } else {
-                originalRequest.headers['Authorization'] = `Bearer ${userStore.token}`;
-                resolve(service(originalRequest));
-              }
-            });
-          });
-        }
-      }
-      
-      // 其他错误处理
-      switch (status) {
-        case 403: // Forbidden
-          ElMessage.error('权限不足，无法访问');
+          
+          // 尝试刷新token
+          try {
+            const success = await userStore.refreshAccessToken();
+            if (success) {
+              // 重试原始请求
+              const config = error.config;
+              config.headers['Authorization'] = `Bearer ${userStore.token}`;
+              return service(config);
+            } else {
+              await userStore.logout();
+              router.push('/login');
+            }
+          } catch (refreshError) {
+            await userStore.logout();
+            router.push('/login');
+          }
           break;
-        case 404: // Not Found
-           ElMessage.error('请求资源未找到');
-           break;
+          
+        case 403:
+          ElMessage.error('没有权限执行此操作');
+          break;
+          
+        case 404:
+          ElMessage.error('请求的资源不存在');
+          break;
+          
         case 500:
-           ElMessage.error('服务器内部错误');
-           break;
+          ElMessage.error('服务器错误，请稍后重试');
+          break;
+          
         default:
-          ElMessage.error(error.response.data.detail || '请求失败');
+          ElMessage.error(error.response.data?.detail || '请求失败');
       }
     } else if (error.request) {
-      // Request was made but no response received
-      ElMessage.error('无法连接到服务器，请检查网络');
+      ElMessage.error('网络错误，请检查网络连接');
     } else {
-      // Something happened in setting up the request
-       ElMessage.error('请求发送失败');
+      ElMessage.error('请求配置错误');
     }
     
-    ElMessage.error(error.message);
     return Promise.reject(error);
   }
 );

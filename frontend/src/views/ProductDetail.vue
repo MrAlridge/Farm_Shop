@@ -42,7 +42,7 @@
             <div class="product-price-section">
               <div class="price-main">
                 <span class="price-symbol">¥</span>
-                <span class="price-value">{{ product.price }}</span>
+                <span class="price-value">{{ product.price.toFixed(2) }}</span>
               </div>
               <div class="price-info">
                 <span class="stock-info">库存: {{ product.stock }}</span>
@@ -57,16 +57,15 @@
               <p>{{ product.description }}</p>
             </div>
 
-            <!-- <div class="product-seller">
+            <div class="product-seller" v-if="product.added_by">
               <h3>卖家信息</h3>
               <div class="seller-info">
-                <el-avatar :size="40" :src="product.added_by?.avatar" />
                 <div class="seller-details">
-                  <p class="seller-name">{{ product.added_by?.username || '未知' }}</p>
-                  <p class="seller-type" v-if="product.added_by?.user_type === 'poor'">帮扶农户</p>
+                  <p class="seller-name">{{ product.added_by.username }}</p>
+                  <p class="seller-type" v-if="product.added_by.user_type === 'poor'">帮扶农户</p>
                 </div>
               </div>
-            </div> -->
+            </div>
 
             <el-divider />
 
@@ -86,7 +85,7 @@
                   type="primary" 
                   size="large" 
                   :disabled="!product.stock"
-                  @click="addToCart"
+                  @click="handleAddToCart"
                 >
                   加入购物车
                 </el-button>
@@ -96,58 +95,6 @@
         </el-card>
       </el-col>
     </el-row>
-
-    <!-- 商品评价区 -->
-    <el-row class="reviews-section">
-      <el-col :span="24">
-        <el-card>
-          <template #header>
-            <div class="reviews-header">
-              <h2>商品评价</h2>
-              <el-button type="primary" @click="showReviewDialog">写评价</el-button>
-            </div>
-          </template>
-          
-          <div v-if="reviews.length > 0" class="reviews-list">
-            <div v-for="review in reviews" :key="review.id" class="review-item">
-              <div class="review-header">
-                <el-avatar :size="40" :src="review.user.avatar" />
-                <span class="review-username">{{ review.user.username }}</span>
-                <el-rate v-model="review.rating" disabled />
-                <span class="review-time">{{ formatDate(review.created_at) }}</span>
-              </div>
-              <div class="review-content">
-                {{ review.content }}
-              </div>
-            </div>
-          </div>
-          <el-empty v-else description="暂无评价" />
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <!-- 评价对话框 -->
-    <el-dialog v-model="reviewDialogVisible" title="写评价" width="500px">
-      <el-form :model="reviewForm" :rules="reviewRules" ref="reviewFormRef">
-        <el-form-item label="评分" prop="rating">
-          <el-rate v-model="reviewForm.rating" />
-        </el-form-item>
-        <el-form-item label="评价内容" prop="content">
-          <el-input
-            v-model="reviewForm.content"
-            type="textarea"
-            :rows="4"
-            placeholder="请输入您的评价内容"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="reviewDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitReview">提交评价</el-button>
-        </span>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
@@ -155,7 +102,8 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getProductDetail, getProductReviews, submitReview as submitReviewApi, getCategories } from '@/api/product'
+import { getProductDetail, getCategories } from '@/api/product'
+import { addToCart as addToCartApi } from '@/api/cart'
 import { formatDate } from '@/utils/format'
 
 const route = useRoute()
@@ -170,26 +118,7 @@ const product = ref({
   category: '',
   added_by: null
 })
-const reviews = ref([])
 const quantity = ref(1)
-const reviewDialogVisible = ref(false)
-const reviewFormRef = ref(null)
-
-const reviewForm = ref({
-  rating: 5,
-  content: ''
-})
-
-const reviewRules = {
-  rating: [
-    { required: true, message: '请选择评分', trigger: 'change' }
-  ],
-  content: [
-    { required: true, message: '请输入评价内容', trigger: 'blur' },
-    { min: 10, message: '评价内容至少10个字符', trigger: 'blur' }
-  ]
-}
-
 const categories = ref([])
 
 // 获取分类列表
@@ -221,7 +150,6 @@ const fetchProductDetail = async () => {
         price: parseFloat(data.price) || 0,
         stock: data.stock || 0,
         description: data.description || '暂无描述',
-        images: data.image ? [data.image] : [],
         main_image: data.image || '',
         sales: data.sales || 0,
         category: data.category || '',
@@ -236,53 +164,34 @@ const fetchProductDetail = async () => {
   }
 }
 
-// 获取商品评价
-const fetchReviews = async () => {
-  try {
-    const response = await getProductReviews(route.params.id)
-    reviews.value = response.data
-  } catch (error) {
-    ElMessage.error('获取商品评价失败')
-  }
-}
-
 // 加入购物车
-const addToCart = () => {
-  // TODO: 实现加入购物车功能
-  ElMessage.success('已加入购物车')
-}
-
-// 显示评价对话框
-const showReviewDialog = () => {
-  reviewDialogVisible.value = true
-}
-
-// 提交评价
-const submitReview = async () => {
-  if (!reviewFormRef.value) return
-  
-  await reviewFormRef.value.validate(async (valid) => {
-    if (valid) {
-      try {
-        // await submitReviewApi(route.params.id, reviewForm.value)
-        ElMessage.success('评价提交成功')
-        reviewDialogVisible.value = false
-        // await fetchReviews()
-        reviewForm.value = {
-          rating: 5,
-          content: ''
-        }
-      } catch (error) {
-        ElMessage.error('评价提交失败')
+const handleAddToCart = async () => {
+  try {
+    await addToCartApi(product.value.id, quantity.value)
+    // 更新本地存储中的商品信息
+    const cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]')
+    const item = cartItems.find(item => item.product.id === product.value.id)
+    if (item) {
+      item.product = {
+        id: product.value.id,
+        name: product.value.name,
+        price: product.value.price,
+        image: product.value.main_image,
+        stock: product.value.stock,
+        added_by: product.value.added_by
       }
+      localStorage.setItem('cartItems', JSON.stringify(cartItems))
     }
-  })
+    ElMessage.success('已加入购物车')
+  } catch (error) {
+    console.error('加入购物车失败:', error)
+    ElMessage.error('加入购物车失败：' + (error.message || '未知错误'))
+  }
 }
 
 onMounted(() => {
   fetchProductDetail()
   fetchCategories()
-  // fetchReviews()
 })
 </script>
 

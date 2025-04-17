@@ -15,7 +15,7 @@ class Product(models.Model):
     stock = models.PositiveIntegerField(default=0)
     sales = models.PositiveIntegerField(default=0)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True,related_name='products')
-    image = models.ImageField(upload_to='products/', blank=True, null=True) #需要安装Pillow库
+    image = models.ImageField(upload_to='products/', blank=True, null=True) # 修改为可选字段
     added_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='products',limit_choices_to={'user_type': 'poor'})
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

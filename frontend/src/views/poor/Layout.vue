@@ -14,22 +14,34 @@
               <el-icon><HomeFilled /></el-icon>
               <span>首页</span>
             </el-menu-item>
-            <el-menu-item index="/poor/policies">
+            <!-- <el-menu-item index="/poor/policies">
               <el-icon><Document /></el-icon>
               <span>扶贫政策</span>
+            </el-menu-item> -->
+            <el-menu-item index="/poor/assistance-projects">
+              <el-icon><Connection /></el-icon>
+              <span>帮扶项目</span>
             </el-menu-item>
             <el-menu-item index="/poor/cases">
               <el-icon><Star /></el-icon>
               <span>成功案例</span>
             </el-menu-item>
+            <el-menu-item index="/poor/product/publish">
+              <el-icon><Goods /></el-icon>
+              <span>发布商品</span>
+            </el-menu-item>
+            <el-menu-item index="/poor/shipping">
+              <el-icon><Van /></el-icon>
+              <span>发货管理</span>
+            </el-menu-item>
             <el-menu-item index="/poor/applications">
-              <el-icon><List /></el-icon>
+              <el-icon><Document /></el-icon>
               <span>我的申请</span>
             </el-menu-item>
-            <el-menu-item index="/poor/notifications">
+            <!-- <el-menu-item index="/poor/notifications">
               <el-icon><Bell /></el-icon>
               <span>系统通知</span>
-            </el-menu-item>
+            </el-menu-item> -->
           </el-menu>
         </el-aside>
         <el-main>
@@ -48,7 +60,10 @@ import {
   Document,
   Star,
   List,
-  Bell
+  Bell,
+  Connection,
+  Goods,
+  Van
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

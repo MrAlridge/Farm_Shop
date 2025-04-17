@@ -505,6 +505,9 @@ const changePassword = async () => {
 // 方法
 const handleMenuSelect = (index) => {
   activeMenu.value = index
+  if (index === 'orders') {
+    router.push('/orders')
+  }
 }
 
 const saveProfile = async () => {

@@ -1,18 +1,12 @@
 from django.contrib import admin
 from .models import PovertyApplication, AssistanceRecord
 
-class AssistanceRecordInline(admin.TabularInline):
-    model = AssistanceRecord
-    extra = 0
-    readonly_fields = ('assistance_date',)
-
 @admin.register(PovertyApplication)
 class PovertyApplicationAdmin(admin.ModelAdmin):
     list_display = ('user', 'title', 'status', 'created_at', 'reviewed_at')
     list_filter = ('status', 'created_at')
     search_fields = ('user__username', 'title', 'content')
     readonly_fields = ('created_at', 'reviewed_at')
-    inlines = [AssistanceRecordInline]
     
     fieldsets = (
         ('申请信息', {
@@ -38,20 +32,26 @@ class PovertyApplicationAdmin(admin.ModelAdmin):
 
 @admin.register(AssistanceRecord)
 class AssistanceRecordAdmin(admin.ModelAdmin):
-    list_display = ('application', 'supporter', 'assistance_type', 'assistance_date')
-    list_filter = ('assistance_type', 'assistance_date')
-    search_fields = ('application__user__username', 'supporter__username', 'details')
-    readonly_fields = ('assistance_date',)
+    list_display = ('name', 'supporter', 'status', 'start_date', 'end_date', 'deadline')
+    list_filter = ('status', 'start_date', 'end_date')
+    search_fields = ('name', 'description', 'supporter__username', 'contact_person')
+    readonly_fields = ('created_at', 'updated_at')
     
     fieldsets = (
-        ('援助信息', {
-            'fields': ('application', 'supporter', 'assistance_type')
+        ('基本信息', {
+            'fields': ('name', 'image', 'description', 'content')
         }),
-        ('详细信息', {
-            'fields': ('details', 'assistance_date')
+        ('时间安排', {
+            'fields': ('start_date', 'end_date', 'deadline')
+        }),
+        ('联系方式', {
+            'fields': ('contact_person', 'contact_phone', 'contact_email')
+        }),
+        ('其他信息', {
+            'fields': ('supporter', 'status', 'created_at', 'updated_at')
         }),
     )
 
     class Meta:
-        verbose_name = '援助记录'
-        verbose_name_plural = '援助记录管理'
+        verbose_name = '帮扶项目'
+        verbose_name_plural = '帮扶项目管理'

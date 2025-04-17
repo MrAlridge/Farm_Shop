@@ -71,6 +71,15 @@ const routes = [
     }
   },
   {
+    path: '/orders/:id',
+    name: 'OrderDetail',
+    component: () => import('@/views/OrderDetail.vue'),
+    meta: {
+      title: '订单详情',
+      requiresAuth: true
+    }
+  },
+  {
     path: '/user',
     name: 'UserCenterLayout', // 建议给布局路由一个清晰的名字
     component: () => import('@/views/UserCenter.vue'), // 用户中心布局
@@ -172,27 +181,76 @@ const routes = [
         name: 'PoorProductPublish',
         component: () => import('@/views/poor/ProductPublish.vue'),
         meta: { title: '发布农产品' }
+      },
+      {
+        path: 'shipping',
+        name: 'PoorShipping',
+        component: () => import('@/views/poor/Shipping.vue'),
+        meta: { title: '发货管理' }
+      },
+      {
+        path: 'assistance-projects',
+        name: 'PoorAssistanceProjects',
+        component: () => import('@/views/poor/AssistanceProjects.vue'),
+        meta: { title: '帮扶项目' }
+      },
+      {
+        path: 'project-detail/:id',
+        name: 'PoorProjectDetail',
+        component: () => import('@/views/poor/ProjectDetail.vue'),
+        meta: { title: '项目详情' }
       }
       // ... 其他贫困户专属页面
     ]
   },
+  // --- 社会力量帮扶专区 ---
   {
-    path: '/poor/project/submit',
-    name: 'ProjectSubmit',
-    component: () => import('@/views/social/ProjectSubmit.vue'),
+    path: '/social',
+    name: 'SocialLayout',
+    component: () => import('@/views/social/Layout.vue'),
+    redirect: { name: 'ProjectManagement' },
     meta: {
-      title: '提交项目信息',
-      requiresAuth: true
-    }
-  },
-  {
-    path: '/poor/project/publish',
-    name: 'ProjectPublish',
-    component: () => import('@/views/social/ProjectPublish.vue'),
-    meta: {
-      title: '发布帮扶项目',
-      requiresAuth: true
-    }
+      requiresAuth: true,
+      allowedUserTypes: ['social']
+    },
+    children: [
+      {
+        path: '',
+        redirect: '/social/project-manage'
+      },
+      {
+        path: 'project-publish',
+        name: 'ProjectPublish',
+        component: () => import('@/views/social/ProjectPublish.vue'),
+        meta: {
+          title: '发布帮扶',
+          requiresAuth: true,
+          allowedUserTypes: ['social']
+        }
+      },
+      {
+        path: 'project-manage',
+        name: 'ProjectManagement',
+        component: () => import('@/views/social/ProjectManagement.vue'),
+        meta: {
+          title: '管理帮扶',
+          requiresAuth: true,
+          allowedUserTypes: ['social']
+        }
+      },
+      {
+        path: 'project-detail/:id',
+        name: 'ProjectDetail',
+        component: () => import('@/views/social/ProjectDetail.vue'),
+        meta: { title: '项目详情' }
+      },
+      {
+        path: 'project-edit/:id',
+        name: 'ProjectEdit',
+        component: () => import('@/views/social/ProjectPublish.vue'),
+        meta: { title: '编辑帮扶项目' }
+      }
+    ]
   },
   // --- 404 Not Found ---
   {

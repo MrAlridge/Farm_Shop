@@ -4,11 +4,11 @@
       <el-tab-pane label="全部订单" name="all">
         <order-list :orders="allOrders" />
       </el-tab-pane>
-      <el-tab-pane label="待付款" name="unpaid">
-        <order-list :orders="unpaidOrders" />
+      <el-tab-pane label="待付款" name="pending">
+        <order-list :orders="pendingOrders" />
       </el-tab-pane>
-      <el-tab-pane label="待发货" name="unshipped">
-        <order-list :orders="unshippedOrders" />
+      <el-tab-pane label="待发货" name="paid">
+        <order-list :orders="paidOrders" />
       </el-tab-pane>
       <el-tab-pane label="待收货" name="shipped">
         <order-list :orders="shippedOrders" />
@@ -21,58 +21,40 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import OrderList from '../components/OrderList.vue'
+import { getOrders } from '@/api/order'
 
 const activeTab = ref('all')
+const orders = ref([])
 
-// 模拟订单数据
-const orders = ref([
-  {
-    id: '202404010001',
-    status: 'unpaid',
-    createTime: '2024-04-01 10:00:00',
-    totalAmount: 109.7,
-    items: [
-      {
-        id: 1,
-        name: '有机大米',
-        price: 39.9,
-        quantity: 2,
-        image: '/product1.jpg'
-      },
-      {
-        id: 2,
-        name: '土鸡蛋',
-        price: 29.9,
-        quantity: 1,
-        image: '/product2.jpg'
-      }
-    ]
-  },
-  {
-    id: '202403280001',
-    status: 'completed',
-    createTime: '2024-03-28 15:30:00',
-    totalAmount: 49.9,
-    items: [
-      {
-        id: 3,
-        name: '山核桃',
-        price: 49.9,
-        quantity: 1,
-        image: '/product3.jpg'
-      }
-    ]
+// 获取订单数据
+const fetchOrders = async () => {
+  try {
+    const response = await getOrders()
+    if (response && response.results) {
+      orders.value = response.results
+    } else {
+      console.error('获取订单数据失败：响应格式不正确')
+      ElMessage.error('获取订单数据失败')
+    }
+  } catch (error) {
+    console.error('获取订单数据失败:', error)
+    ElMessage.error('获取订单数据失败：' + (error.message || '未知错误'))
   }
-])
+}
 
 // 根据状态筛选订单
 const allOrders = computed(() => orders.value)
-const unpaidOrders = computed(() => orders.value.filter(order => order.status === 'unpaid'))
-const unshippedOrders = computed(() => orders.value.filter(order => order.status === 'unshipped'))
+const pendingOrders = computed(() => orders.value.filter(order => order.status === 'pending'))
+const paidOrders = computed(() => orders.value.filter(order => order.status === 'paid'))
 const shippedOrders = computed(() => orders.value.filter(order => order.status === 'shipped'))
 const completedOrders = computed(() => orders.value.filter(order => order.status === 'completed'))
+
+onMounted(() => {
+  fetchOrders()
+})
 </script>
 
 <style scoped>

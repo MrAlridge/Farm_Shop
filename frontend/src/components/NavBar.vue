@@ -12,10 +12,17 @@
     <el-sub-menu index="poor" v-if="isPoorUser">
       <template #title>扶贫专区</template>
       <el-menu-item index="/poor/dashboard">扶贫首页</el-menu-item>
-      <el-menu-item index="/poor/policies">扶贫政策</el-menu-item>
+      <el-menu-item index="/poor/assistance-projects">帮扶项目</el-menu-item>
       <el-menu-item index="/poor/cases">扶贫案例</el-menu-item>
-      <el-menu-item index="/poor/applications" v-if="isPoorUser">我的申请</el-menu-item>
+      <el-menu-item index="/poor/product/publish">发布商品</el-menu-item>
+      <!-- <el-menu-item index="/poor/applications" v-if="isPoorUser">我的申请</el-menu-item> -->
       </el-sub-menu>
+
+    <el-sub-menu index="social" v-if="isSocialUser">
+      <template #title>帮扶专区</template>
+      <el-menu-item index="/social/project-publish">发布帮扶</el-menu-item>
+      <el-menu-item index="/social/project-manage">管理帮扶</el-menu-item>
+    </el-sub-menu>
 
     <el-sub-menu index="user" class="user-menu" v-if="isLoggedIn">
       <template #title>
@@ -69,6 +76,11 @@ const isPoorUser = computed(() => {
   return userStore.userType === 'poor';
 })
 
+// 判断当前登录用户是否为社会力量
+const isSocialUser = computed(() => {
+  return userStore.userType === 'social';
+})
+
 // 判断是否有用户登录（普通或贫困户）
 const isLoggedIn = computed(() => {
   return userStore.token !== ''
@@ -119,6 +131,7 @@ watch(() => router.currentRoute.value.path, (newPath) => {
 }, { immediate: true }); // immediate: true 确保初始加载时也执行
 
 console.log('isPoorUser',isPoorUser.value)
+console.log('isSocialUser',isSocialUser.value)
 console.log('isLoggedIn',isLoggedIn.value)
 
 </script>

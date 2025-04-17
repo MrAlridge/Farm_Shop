@@ -10,8 +10,7 @@ export const useUserStore = defineStore('user', {
   // 从 localStorage 初始化 state
   state: () => ({
     token: localStorage.getItem('userToken') || '',
-    refreshToken: localStorage.getItem('refreshToken') || '', // 添加 refresh token
-    // userInfo 现在也包含 userType
+    refreshToken: localStorage.getItem('refreshToken') || '',
     userInfo: (() => {
       try {
         return JSON.parse(localStorage.getItem('userInfo')) || {}
@@ -21,7 +20,6 @@ export const useUserStore = defineStore('user', {
         return {}
       }
     })(),
-    // isLoggedIn 状态应基于 token 和 userInfo.id 是否存在
     isLoggedIn: !!localStorage.getItem('userToken'),
     // 贫困户专属字段
     applicationStatus: null,
@@ -31,19 +29,13 @@ export const useUserStore = defineStore('user', {
   }),
 
   getters: {
-    // Getter 现在直接返回 state 的值
     username: (state) => state.userInfo?.username,
     avatar: (state) => state.userInfo?.avatar || '',
     userId: (state) => state.userInfo?.id,
-    // 新增：获取用户类型
     userType: (state) => state.userInfo?.user_type,
-
-    // 可以添加更具体的类型检查 getter
     isPoorUser: (state) => state.userInfo?.user_type === 'poor',
     isSocialUser: (state) => state.userInfo?.user_type === 'social',
     isAdminUser: (state) => state.userInfo?.is_staff === true,
-
-    // 贫困户专属
     status: (state) => state.userInfo?.status || '',
     approvedProjects: (state) => state.assistanceProjects.filter(project => project.status === 'approved'),
     availableMaterials: (state) => state.materialAssistance.filter(material => material.status === 'available'),
@@ -80,7 +72,7 @@ export const useUserStore = defineStore('user', {
       }
     },
 
-    // 修改登录方法
+    // 登录方法
     async login(credentials) {
       try {
         const response = await userApi.login(credentials)
@@ -95,17 +87,74 @@ export const useUserStore = defineStore('user', {
           if (this.isAdminUser) {
             router.push('/admin/dashboard')
           } else if (this.isPoorUser) {
-            router.push('/applications')
+            router.push('/poor/dashboard')
           } else if (this.isSocialUser) {
-            router.push('/support/dashboard')
+            router.push('/social/project-manage')
+          } else {
+            router.push('/')
           }
+          
+          return true
+        } else {
+          ElMessage.error('登录失败：服务器返回数据格式错误')
+          return false
+        }
+      } catch (error) {
+        console.error('登录失败:', error)
+        ElMessage.error(error.response?.data?.detail || '登录失败，请检查用户名和密码')
+        return false
+      }
+    },
+
+    // 刷新访问令牌
+    async refreshAccessToken() {
+      try {
+        if (!this.refreshToken) {
+          return false
+        }
+        
+        const response = await userApi.refreshToken(this.refreshToken)
+        
+        if (response.access) {
+          this.token = response.access
+          localStorage.setItem('userToken', response.access)
           return true
         }
         return false
       } catch (error) {
-        console.error('登录失败:', error)
-        ElMessage.error(error.response?.data?.error || '登录失败')
+        console.error('刷新令牌失败:', error)
         return false
+      }
+    },
+
+    // 登出方法
+    async logout() {
+      try {
+        // 清除本地存储的令牌和用户信息
+        this.setTokens('', '')
+        this.setUserInfo(null)
+        
+        // 可选：调用后端登出API
+        // await userApi.logout()
+        
+        ElMessage.success('已退出登录')
+        router.push('/login')
+        return true
+      } catch (error) {
+        console.error('登出失败:', error)
+        return false
+      }
+    },
+
+    // 获取当前用户信息
+    async fetchUserInfo() {
+      try {
+        const response = await userApi.getMe()
+        this.setUserInfo(response)
+        return response
+      } catch (error) {
+        console.error('获取用户信息失败:', error)
+        return null
       }
     },
 
@@ -119,21 +168,6 @@ export const useUserStore = defineStore('user', {
         console.error('注册失败:', error);
         ElMessage.error(error.response?.data?.detail || error.message || '注册失败');
         return false;
-      }
-    },
-
-    // 获取用户信息 (通常在登录后或页面刷新时调用)
-    async fetchUserInfo() {
-      try {
-        const response = await userApi.getMe()
-        this.setUserInfo(response)
-        return true
-      } catch (error) {
-        console.error('获取用户信息失败:', error)
-        if (error.response?.status === 401) {
-          await this.logout()
-        }
-        return false
       }
     },
 
@@ -174,38 +208,6 @@ export const useUserStore = defineStore('user', {
         console.error('密码修改失败:', error);
         ElMessage.error(error.response?.data?.detail || error.message || '密码修改失败');
         return false;
-      }
-    },
-
-    // 添加刷新 token 的方法
-    async refreshAccessToken() {
-      try {
-        if (!this.refreshToken) {
-          throw new Error('No refresh token available')
-        }
-        const response = await userApi.refreshToken(this.refreshToken)
-        if (response.access) {
-          this.setTokens(response.access, this.refreshToken)
-          return true
-        }
-        return false
-      } catch (error) {
-        console.error('刷新token失败:', error)
-        await this.logout()
-        return false
-      }
-    },
-
-    // 修改 logout 方法
-    async logout() {
-      try {
-        await userApi.logout()
-      } catch (error) {
-        console.error('登出请求失败:', error)
-      } finally {
-        this.setTokens(null, null)
-        this.setUserInfo(null)
-        router.push('/login')
       }
     },
 
