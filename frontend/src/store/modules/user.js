@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import * as userApi from '@/api/user'
 import { ElMessage } from 'element-plus'
 import router from '@/router'
+import { clearCart } from '@/api/cart'
+import { getToken, setToken, removeToken } from '@/utils/auth'
 
 // 假设 api/user.js 导出了一个 getMe 函数用于请求 /users/me/
 // 并且 login 函数返回的数据包含 userInfo (含 userType) 或需要调用 getMe 获取
@@ -9,7 +11,7 @@ import router from '@/router'
 export const useUserStore = defineStore('user', {
   // 从 localStorage 初始化 state
   state: () => ({
-    token: localStorage.getItem('userToken') || '',
+    token: getToken(),
     refreshToken: localStorage.getItem('refreshToken') || '',
     userInfo: (() => {
       try {
@@ -25,7 +27,10 @@ export const useUserStore = defineStore('user', {
     applicationStatus: null,
     assistanceProjects: [],
     materialAssistance: [],
-    educationAssistance: []
+    educationAssistance: [],
+    username: '',
+    userType: '',
+    avatar: ''
   }),
 
   getters: {
@@ -41,6 +46,7 @@ export const useUserStore = defineStore('user', {
     availableMaterials: (state) => state.materialAssistance.filter(material => material.status === 'available'),
     availableEducation: (state) => state.educationAssistance.filter(edu => edu.status === 'available'),
     phoneNumber: (state) => state.userInfo?.phone_number,
+    isAuthenticated: (state) => !!state.token,
   },
 
   actions: {
@@ -130,18 +136,19 @@ export const useUserStore = defineStore('user', {
     // 登出方法
     async logout() {
       try {
-        // 清除本地存储的令牌和用户信息
+        // 先清空购物车
+        await clearCart()
+        // 调用退出登录接口
+        await userApi.logout()
+        // 清除token和用户信息
         this.setTokens('', '')
         this.setUserInfo(null)
-        
-        // 可选：调用后端登出API
-        // await userApi.logout()
-        
-        ElMessage.success('已退出登录')
+        removeToken()
+        // 跳转到登录页
         router.push('/login')
         return true
       } catch (error) {
-        console.error('登出失败:', error)
+        console.error('退出登录失败:', error)
         return false
       }
     },
@@ -294,5 +301,26 @@ export const useUserStore = defineStore('user', {
         throw error
       }
     },
+
+    // 获取用户信息
+    async getInfo() {
+      try {
+        const response = await userApi.getMe()
+        const { username, user_type, avatar } = response
+        this.username = username
+        this.userType = user_type
+        this.avatar = avatar
+        this.userInfo = response
+        return response
+      } catch (error) {
+        throw error
+      }
+    },
+
+    // 重置令牌
+    resetToken() {
+      this.token = ''
+      removeToken()
+    }
   }
 })

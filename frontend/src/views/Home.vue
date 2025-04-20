@@ -58,9 +58,9 @@ const featuredProducts = ref([
 ])
 
 const povertyNews = ref([
-  { date: '2024-04-01', content: '某村农产品成功上线平台', type: 'success' },
-  { date: '2024-03-15', content: '开展农产品种植技术培训', type: 'primary' },
-  { date: '2024-03-01', content: '平台新增6个扶贫产品', type: 'warning' }
+  { date: '2025-04-01', content: '某村农产品成功上线平台', type: 'success' },
+  { date: '2025-03-15', content: '开展农产品种植技术培训', type: 'primary' },
+  { date: '2025-03-01', content: '平台新增6个扶贫产品', type: 'warning' }
 ])
 
 const viewProduct = (id) => {
@@ -73,6 +73,236 @@ const viewBlog = (id) => {
 </script>
 
 <style scoped>
+.home-container {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+.hero-section {
+  position: relative;
+  height: 500px;
+  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+              url('/hero-bg.jpg') center/cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: white;
+}
+
+.hero-content {
+  max-width: 800px;
+  padding: 0 20px;
+}
+
+.hero-title {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.hero-subtitle {
+  font-size: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.hero-button {
+  padding: 12px 30px;
+  font-size: 1.2rem;
+}
+
+.section {
+  padding: 60px 0;
+  text-align: center;
+}
+
+.section-title {
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+  color: #333;
+}
+
+.section-subtitle {
+  font-size: 1.2rem;
+  color: #666;
+  margin-bottom: 3rem;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.assistance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.assistance-card {
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s;
+}
+
+.assistance-card:hover {
+  transform: translateY(-5px);
+}
+
+.assistance-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.assistance-content {
+  padding: 20px;
+}
+
+.assistance-title {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.assistance-description {
+  color: #666;
+  margin-bottom: 1.5rem;
+}
+
+.assistance-button {
+  width: 100%;
+}
+
+.news-section {
+  background-color: #f9f9f9;
+  padding: 60px 0;
+}
+
+.news-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  text-align: center;
+}
+
+.news-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  margin-top: 40px;
+}
+
+.news-card {
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.news-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.news-content {
+  padding: 20px;
+}
+
+.news-title {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.news-date {
+  color: #999;
+  font-size: 0.9rem;
+}
+
+.news-description {
+  color: #666;
+  margin-top: 1rem;
+}
+
+.contact-section {
+  background-color: #fff;
+  padding: 60px 0;
+}
+
+.contact-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  text-align: center;
+}
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 30px;
+  margin-top: 40px;
+}
+
+.contact-card {
+  background: #f9f9f9;
+  border-radius: 10px;
+  padding: 30px;
+  text-align: center;
+}
+
+.contact-icon {
+  font-size: 2.5rem;
+  color: #409eff;
+  margin-bottom: 1rem;
+}
+
+.contact-title {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.contact-info {
+  color: #666;
+}
+
+.footer {
+  background-color: #333;
+  color: white;
+  padding: 40px 0;
+  text-align: center;
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-bottom: 20px;
+}
+
+.footer-link {
+  color: white;
+  text-decoration: none;
+}
+
+.footer-link:hover {
+  text-decoration: underline;
+}
+
+.footer-copyright {
+  color: #999;
+}
+
 .home {
   padding: 20px;
 }

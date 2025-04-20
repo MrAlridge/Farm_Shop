@@ -1,25 +1,29 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import Group
 from .models import User, SocialSupport, PoorApplication
 
+# 只取消注册 Group 模型
+admin.site.unregister(Group)
+
 @admin.register(User)
-class UserAdmin(BaseUserAdmin):
-    list_display = ('username', 'email', 'user_type', 'phone_number', 'is_active', 'date_joined')
-    list_filter = ('user_type', 'is_active', 'is_staff')
-    search_fields = ('username', 'email', 'phone_number')
-    ordering = ('-date_joined',)
+class CustomUserAdmin(UserAdmin):
+    list_display = ('username', 'email', 'user_type', 'is_staff', 'is_active')
+    list_filter = ('user_type', 'is_staff', 'is_active')
+    search_fields = ('username', 'email')
+    ordering = ('username',)
     
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
-        ('个人信息', {'fields': ('first_name', 'last_name', 'email', 'phone_number')}),
+        ('个人信息', {'fields': ('email', 'phone_number', 'avatar')}),
         ('用户类型', {'fields': ('user_type',)}),
-        ('权限', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
+        ('权限', {'fields': ('is_active', 'is_staff', 'is_superuser')}),
     )
     
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'password1', 'password2', 'user_type', 'email', 'phone_number'),
+            'fields': ('username', 'password1', 'password2', 'user_type'),
         }),
     )
 

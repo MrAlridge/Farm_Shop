@@ -29,7 +29,7 @@
     </div>
     
     <div class="footer-bottom">
-      <p>© 2024 扶贫商城 版权所有</p>
+      <p>© 2025 扶贫商城 版权所有</p>
       <div class="footer-links">
         <router-link to="/about">关于我们</router-link>
         <router-link to="/privacy">隐私政策</router-link>
@@ -75,6 +75,7 @@ import { ChatDotRound, Share } from '@element-plus/icons-vue'
 }
 
 .social-links {
+  justify-content: center;
   display: flex;
   gap: 15px;
 }

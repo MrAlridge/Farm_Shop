@@ -256,10 +256,9 @@ const submitCheckout = async () => {
         const response = await createOrder(orderData)
         
         if (response && response.id) {
-          // 清空已结算的商品
-          cartItems.value = cartItems.value.filter(item => 
-            !selectedItems.value.some(selected => selected.id === item.id)
-          )
+          // 清空整个购物车
+          await clearCart()
+          cartItems.value = []
           selectedItems.value = []
           
           // 重置表单

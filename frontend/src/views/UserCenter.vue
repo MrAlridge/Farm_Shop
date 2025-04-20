@@ -12,37 +12,41 @@
             <el-tag :type="userTypeTag">{{ userTypeLabel }}</el-tag>
           </div>
           
-          <el-menu
-            :default-active="activeMenu"
-            class="user-menu"
-            @select="handleMenuSelect">
-            <el-menu-item index="profile">
-              <el-icon><User /></el-icon>
-              <span>个人资料</span>
-            </el-menu-item>
-            <el-menu-item index="address">
-              <el-icon><Location /></el-icon>
-              <span>收货地址</span>
-            </el-menu-item>
-            <el-menu-item index="security">
-              <el-icon><Lock /></el-icon>
-              <span>修改密码</span>
-            </el-menu-item>
-            <el-menu-item index="orders">
-              <el-icon><List /></el-icon>
-              <span>我的订单</span>
-            </el-menu-item>
-            <!-- 普通用户显示申请入口 -->
-            <el-menu-item v-if="userStore.isSocialUser" index="poor-application">
-              <el-icon><Document /></el-icon>
-              <span>申请贫困户</span>
-            </el-menu-item>
-            <!-- 管理员显示审核入口 -->
-            <el-menu-item v-if="userStore.isAdminUser" index="application-review">
-              <el-icon><Check /></el-icon>
-              <span>申请审核</span>
-            </el-menu-item>
-          </el-menu>
+          <el-card class="menu-card">
+            <el-menu
+              :default-active="activeMenu"
+              class="user-menu"
+              @select="handleMenuSelect"
+              style="width: 1000px;"
+            >
+              <el-menu-item index="profile">
+                <el-icon><User /></el-icon>
+                <span>个人资料</span>
+              </el-menu-item>
+              <!-- <el-menu-item index="address">
+                <el-icon><Location /></el-icon>
+                <span>收货地址</span>
+              </el-menu-item> -->
+              <!-- <el-menu-item index="security">
+                <el-icon><Lock /></el-icon>
+                <span>修改密码</span>
+              </el-menu-item> -->
+              <el-menu-item index="orders">
+                <el-icon><List /></el-icon>
+                <span>我的订单</span>
+              </el-menu-item>
+              <!-- 普通用户显示申请入口 -->
+              <el-menu-item v-if="userStore.isSocialUser" index="poor-application">
+                <el-icon><Document /></el-icon>
+                <span>申请贫困户</span>
+              </el-menu-item>
+              <!-- 管理员显示审核入口 -->
+              <el-menu-item v-if="userStore.isAdminUser" index="application-review">
+                <el-icon><Check /></el-icon>
+                <span>申请审核</span>
+              </el-menu-item>
+            </el-menu>
+          </el-card>
         </el-card>
       </el-col>
       
@@ -254,6 +258,16 @@
               </template>
             </el-table-column>
           </el-table>
+        </el-card>
+
+        <!-- 我的订单 -->
+        <el-card v-if="activeMenu === 'orders'" class="content-card">
+          <template #header>
+            <div class="card-header">
+              <span>我的订单</span>
+            </div>
+          </template>
+          <OrderList />
         </el-card>
 
         <!-- 修改密码 -->
@@ -839,5 +853,29 @@ onMounted(async () => {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+}
+
+.menu-card {
+  margin-bottom: 20px;
+}
+
+.user-menu {
+  border-right: none;
+}
+
+.user-menu :deep(.el-menu-item) {
+  height: 50px;
+  line-height: 50px;
+  padding: 0 20px;
+  white-space: nowrap;
+}
+
+.user-menu :deep(.el-menu-item.is-active) {
+  background-color: #ecf5ff;
+  color: #409eff;
+}
+
+.user-menu :deep(.el-menu-item:hover) {
+  background-color: #f5f7fa;
 }
 </style> 

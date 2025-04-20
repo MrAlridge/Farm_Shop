@@ -30,9 +30,9 @@
         <span class="username">{{ username }}</span>
       </template>
       <el-menu-item index="/user/profile">个人中心</el-menu-item>
+      <!-- <el-menu-item index="/user/security">修改密码</el-menu-item> -->
       <el-menu-item index="/orders">我的订单</el-menu-item>
-      <el-menu-item index="/user/address">收货地址</el-menu-item>
-      <el-menu-item index="/user/security">安全设置</el-menu-item>
+      <!-- <el-menu-item index="/user/address">收货地址</el-menu-item> -->
       <el-menu-item @click="handleLogout">退出登录</el-menu-item>
     </el-sub-menu>
 
