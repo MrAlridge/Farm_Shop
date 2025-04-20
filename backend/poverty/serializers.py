@@ -13,7 +13,8 @@ class PovertyApplicationSerializer(serializers.ModelSerializer):
         model = PovertyApplication
         fields = [
             'id', 'user', 'title', 'content', 'status', 'status_display',
-            'created_at', 'reviewed_at', 'review_comment', 'username'
+            'created_at', 'reviewed_at', 'review_comment', 'username',
+            'household_income', 'family_members'
         ]
         read_only_fields = [
             'user',  # user 字段设为只读，由后端自动设置

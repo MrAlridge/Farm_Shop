@@ -102,14 +102,14 @@
                 :model="poorApplicationForm"
                 :rules="poorApplicationRules"
             label-width="100px">
-                <el-form-item label="申请标题" prop="title">
+                <el-form-item label="申请标题" label-width="120px" prop="title">
               <el-input
                     v-model="poorApplicationForm.title"
                     placeholder="请输入申请标题"
                   />
             </el-form-item>
                 
-                <el-form-item label="申请内容" prop="content">
+                <el-form-item label="申请内容" label-width="120px" prop="content">
               <el-input
                     v-model="poorApplicationForm.content"
                     type="textarea"
@@ -118,7 +118,7 @@
                   />
             </el-form-item>
                 
-                <el-form-item label="证明材料">
+                <!-- <el-form-item label="证明材料">
                   <el-upload
                     action="/api/upload"
                     :on-success="handleUploadSuccess"
@@ -133,6 +133,14 @@
                       </div>
                     </template>
                   </el-upload>
+            </el-form-item> -->
+
+            <el-form-item label="家庭成员数量" label-width="120px" prop="familyMemberCount">
+              <el-input-number v-model="poorApplicationForm.familyMemberCount" :min="0" :max="100" />
+            </el-form-item>
+
+            <el-form-item label="年收入" label-width="120px" prop="annualIncome">
+              <el-input-number v-model="poorApplicationForm.annualIncome" />
             </el-form-item>
                 
             <el-form-item>
@@ -406,6 +414,14 @@ const poorApplicationRules = {
   content: [
     { required: true, message: '请输入申请内容', trigger: 'blur' },
     { min: 10, message: '申请内容至少10个字符', trigger: 'blur' }
+  ],
+  familyMemberCount: [
+    { required: true, message: '请输入家庭成员数量', trigger: 'blur' },
+    { type: 'number', message: '请输入正确的数字', trigger: 'blur' }
+  ],
+  annualIncome: [
+    { required: false, message: '请输入年收入', trigger: 'blur' },
+    { type: 'number', message: '请输入正确的数字', trigger: 'blur' }
   ]
 }
 
@@ -424,7 +440,8 @@ const poorApplicationForm = ref({
   title: '',
   type: 'poverty', // 申请类型为贫困户
   content: '',     // 申请内容
-  attachments: []  // 附件列表
+  familyMemberCount: 0,
+  annualIncome: 0
 })
 
 const hasPendingApplication = computed(() => {
@@ -548,7 +565,8 @@ const handleSubmitApplication = async () => {
         const applicationData = {
           title: poorApplicationForm.value.title,
           content: poorApplicationForm.value.content,
-          // 不需要发送 user 字段，由后端自动设置
+          family_members: poorApplicationForm.value.familyMemberCount,
+          household_income: poorApplicationForm.value.annualIncome
         }
 
         await submitPovertyApplication(applicationData)
@@ -557,7 +575,8 @@ const handleSubmitApplication = async () => {
         poorApplicationForm.value = {
           title: '',
           content: '',
-          attachments: []
+          familyMemberCount: 0,
+          annualIncome: 0
         }
       } catch (error) {
         console.error('提交申请失败:', error)

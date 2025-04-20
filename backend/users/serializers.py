@@ -3,10 +3,29 @@ from rest_framework import serializers
 from .models import User, SocialSupport, PoorApplication
 
 class UserSerializer(serializers.ModelSerializer):
+    family_members = serializers.SerializerMethodField()
+    annual_income = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ('id', 'username', 'password', 'user_type', 'phone_number', 'first_name', 'last_name', 'email')  # 根据需要选择字段,这里我为您添加了一些常用的字段
+        fields = ('id', 'username', 'password', 'user_type', 'phone_number', 'first_name', 'last_name', 'email', 'family_members', 'annual_income')
         extra_kwargs = {'password': {'write_only': True}} # 密码仅用于写入
+
+    def get_family_members(self, obj):
+        if obj.user_type == 'poor':
+            # 获取用户最新的已通过的贫困户申请
+            latest_application = obj.poverty_applications.filter(status='approved').order_by('-created_at').first()
+            if latest_application:
+                return latest_application.family_members
+        return None
+
+    def get_annual_income(self, obj):
+        if obj.user_type == 'poor':
+            # 获取用户最新的已通过的贫困户申请
+            latest_application = obj.poverty_applications.filter(status='approved').order_by('-created_at').first()
+            if latest_application:
+                return latest_application.household_income
+        return None
 
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)

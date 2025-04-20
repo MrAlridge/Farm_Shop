@@ -47,7 +47,7 @@
       </el-table>
 
       <div class="order-actions" v-if="order.status === 'pending'">
-        <el-button type="primary" @click="handlePay">立即支付</el-button>
+        <!-- <el-button type="primary" @click="handlePay">立即支付</el-button> -->
         <el-button @click="handleCancel">取消订单</el-button>
       </div>
     </el-card>
@@ -78,8 +78,8 @@ const getStatusType = (status) => {
 
 const getStatusText = (status) => {
   const statusMap = {
-    pending: '待付款',
-    paid: '已付款',
+    pending: '待发货',
+    paid: '已发货',
     shipped: '已发货',
     completed: '已完成',
     cancelled: '已取消'
