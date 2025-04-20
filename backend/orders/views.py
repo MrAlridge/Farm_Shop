@@ -48,7 +48,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         # 获取该贫困户的待发货订单项
         order_items = OrderItem.objects.filter(
             product__added_by=request.user,  # 使用 added_by 字段
-            order__status='paid'  # 只获取已支付的订单
+            order__status='pending'  # 只获取已支付的订单
         ).select_related('order', 'product')
 
         # 按订单分组

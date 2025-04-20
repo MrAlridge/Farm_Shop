@@ -41,7 +41,7 @@ class SocialSupportAdmin(admin.ModelAdmin):
         verbose_name = '社会帮扶单位'
         verbose_name_plural = '社会帮扶单位管理'
 
-@admin.register(PoorApplication)
+# @admin.register(PoorApplication)
 class PoorApplicationAdmin(admin.ModelAdmin):
     list_display = ('user', 'status', 'created_at', 'reviewed_at')
     list_filter = ('status', 'created_at')

@@ -5,7 +5,7 @@ from products.models import Product
 
 class Order(models.Model):
     STATUS_CHOICES = (
-        ('pending', '待支付'),
+        ('pending', '待发货'),
         ('paid', '已支付'),
         ('shipped', '已发货'),
         ('delivered', '已送达'),

@@ -4,12 +4,12 @@
       <el-tab-pane label="全部订单" name="all">
         <order-list :orders="allOrders" />
       </el-tab-pane>
-      <el-tab-pane label="待付款" name="pending">
+      <el-tab-pane label="待发货" name="pending">
         <order-list :orders="pendingOrders" />
       </el-tab-pane>
-      <el-tab-pane label="待发货" name="paid">
+      <!-- <el-tab-pane label="待发货" name="paid">
         <order-list :orders="paidOrders" />
-      </el-tab-pane>
+      </el-tab-pane> -->
       <el-tab-pane label="待收货" name="shipped">
         <order-list :orders="shippedOrders" />
       </el-tab-pane>
@@ -48,7 +48,7 @@ const fetchOrders = async () => {
 // 根据状态筛选订单
 const allOrders = computed(() => orders.value)
 const pendingOrders = computed(() => orders.value.filter(order => order.status === 'pending'))
-const paidOrders = computed(() => orders.value.filter(order => order.status === 'paid'))
+// const paidOrders = computed(() => orders.value.filter(order => order.status === 'paid'))
 const shippedOrders = computed(() => orders.value.filter(order => order.status === 'shipped'))
 const completedOrders = computed(() => orders.value.filter(order => order.status === 'completed'))
 

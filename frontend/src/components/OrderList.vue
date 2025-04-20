@@ -33,12 +33,12 @@
       <el-table-column label="操作" width="200" fixed="right">
         <template #default="{ row }">
           <el-button type="primary" size="small" @click="viewOrder(row)">查看详情</el-button>
-          <el-button 
+          <!-- <el-button 
             v-if="row.status === 'pending'" 
             type="success" 
             size="small" 
             @click="payOrder(row)"
-          >立即支付</el-button>
+          >立即支付</el-button> -->
         </template>
       </el-table-column>
     </el-table>
@@ -73,7 +73,7 @@ const getStatusType = (status) => {
 // 获取状态文本
 const getStatusText = (status) => {
   const statusMap = {
-    'pending': '待付款',
+    'pending': '待发货',
     'paid': '已付款',
     'shipped': '已发货',
     'completed': '已完成',
